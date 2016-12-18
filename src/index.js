@@ -55,6 +55,12 @@ const displayRecentTrack = (track) => {
 };
 
 
+/**
+ * TOOK IT FROM THIS THREAD:
+ * HOW ARE CLIENT SIDE QUERYSTRINGS NOT A LANGUAGE FEATURE YET SMH.
+ * @param name
+ * @returns {*}
+ */
 function getParameterByName(name) {
     var url = window.location.href;
     name = name.replace(/[\[\]]/g, "\\$&");
