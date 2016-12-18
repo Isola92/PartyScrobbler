@@ -1,0 +1,86 @@
+body {
+    /*background-image: url("../images/Blurredbackground_Invincible/01_blurred_background_Invincible.jpg"); */
+    background: url("../images/Blurredbackground_Invincible/04_blurred_background_Invincible.jpg") no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    height: 100%;
+    color: white;
+    font-family: Verdana;
+    font-size: 1.2em;
+}
+
+#wrapper {
+    width: 70%;
+    margin: 0 auto;
+}
+
+section, h1, h2{
+    width: 100%;
+    text-align: center;
+}
+
+.input{
+    border-radius: 5px;
+    height: 50px;
+    width: 40%;
+    display: block;
+    margin: 10px auto;
+}
+
+input, button {
+
+
+}
+
+button {
+
+}
+
+
+/*#scrobbleButton{
+    position: absolute;
+    right: 0px;
+}
+
+#connectButton{
+    position: absolute;
+    left: 0px;
+}*/
+section {
+    margin-top: 10%;
+    position: relative;
+
+}
+
+#image {
+    padding-top: 5%;
+    display:block;
+    margin: 0 auto;
+
+}
+
+ul {
+    padding-left: 0;
+}
+
+ul li {
+    list-style: none;
+}
+
+
+h1, h2, p, li, button, span{
+    font-variant-caps: all-small-caps;
+}
+
+@media (max-width: 700px) {
+    #wrapper, .input {
+        width: 100%;
+    }
+
+    #connectButton, #scrobbleButton{
+        position: inherit;
+        width: 100%;
+    }
+}
