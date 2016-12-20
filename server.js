@@ -22,22 +22,26 @@ app.use( express.static(path.join(__dirname, './public')));
 let clients = [];
 let lastfmdata = {};
 let XMLParser;
+let HOST = "";
 
 /**
  * Initiates the server.
  */
-server.listen(3000, function () {
+server.listen(3000, () => {
     console.log('Server listening on port 3000!');
     XMLParser = new xml2js.Parser();
     PartyScrobbler.setCallback(newTrackNotification);
-    checkRecentTrack();
+
+    if(process.argv[2] !== undefined){
+        APICommunicator.host = process.argv[2];
+        checkRecentTrack();
+    }
 });
 
 /**
  * Client requesting the start-page.
  */
-app.get('/', function (req, res) {
-    //APICommunicator.sendRequest(getRecentTrackCb, 'getRecentTracks');
+app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
@@ -46,7 +50,7 @@ app.get('/', function (req, res) {
  */
 app.get('/authenticate', (req, res) => {
     res.redirect('https://www.last.fm/api/auth/?api_key=a05b8d216b62ceec197a37a8b9f11f20&cb=http://192.168.0.190:3000');
-})
+});
 
 /**
  * Server listening on a socket.
@@ -63,7 +67,7 @@ io.on('connection', (socket) => {
     // data = {username, token}
     socket.on('token', (data) => {
         APICommunicator.tokens[data.user] = data.token;
-        APICommunicator.sendRequest(callback, 'getSession', data.user)
+        APICommunicator.sendRequest(callback.bind(APICommunicator), 'getSession', data.user);
     });
 
     socket.on('scrobbleTrack', (data) => {
@@ -75,12 +79,16 @@ io.on('connection', (socket) => {
     });
 });
 
-
-
 /**
- * Callback used for HTTP-requests.
+ * Bind variable in callback with function.bind(this)
+ * and assign it when done.
+ * Makes for a more losely coupled function call so this.addTrack instead
+ * of specificclass.addTrack.
+ * Make both the APICommunicator and Partyscrobbler contain a function
+ * called addItem.
+ * @param response
  */
-const callback = (response) => {
+const callback = function(response){
     let body = '';
 
     response.on('data', (chunk) => {
@@ -88,40 +96,29 @@ const callback = (response) => {
     });
 
     response.on('end', () => {
-        XMLParser.parseString(body, (err, result) => {
-            APICommunicator.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
-            iterateOverClients('party', Object.keys(APICommunicator.sessionTokens));
-        });
+        this.addItem(body);
+        console.log('CALLBACK BOUND TO:', this);
+        console.log('Containing data: ', body);
     });
 };
 
-const getRecentTrackCb = (response) => {
-    let body = '';
 
+const scrobbleTrackCb = function(response) {
+    let body = '';
     response.on('data', (chunk) => {
         body += chunk;
     });
 
     response.on('end', () => {
-        lastfmdata = JSON.parse(body);
-        PartyScrobbler.addTrack(JSON.parse(body));
-        console.log('Last fm data fetched', body);
-    });
-};
-
-const scrobbleTrackCb = (response) => {
-    let body = '';
-    response.on('data', (chunk) => {
-        body += chunk;
-    });
-
-    response.on('end', () => {;
         console.log('SCROBBLED TRACK', body);
     });
 };
 
-
-const newTrackNotification = function() {
+/**
+ * Callback from the PartyScrobbler when a new track is added.
+ * Send the last track and scrobble it.
+ */
+const newTrackNotification = function(){
     iterateOverClients('recenttrack', this.lastScrobbledTrack);
     scrobbleAllClients(this.lastScrobbledTrack);
 };
@@ -129,28 +126,28 @@ const newTrackNotification = function() {
 const checkRecentTrack = function() {
 
     var sendRecentTrack = setInterval( () => {
-        APICommunicator.sendRequest(getRecentTrackCb, 'getRecentTracks');
+        APICommunicator.sendRequest(callback.bind(PartyScrobbler), 'getRecentTracks');
     }, 15000);
 };
 
 
-const iterateOverClients = (name, value) => {
+const iterateOverClients = function(name, value){
     let keys = Object.keys(clients);
 
     keys.forEach( (key) => {
         clients[key].emit(name, value);
-    })
+    });
 };
 
 /**
  * Keep
  */
-const scrobbleAllClients = (track) => {
+const scrobbleAllClients = function(track){
 
     if(PartyScrobbler.compareTrack(lastfmdata)){
         Object.keys(APICommunicator.sessionTokens).forEach( (username) => {
             APICommunicator.sendRequest(scrobbleTrackCb, 'scrobbleTrack', username, track);
-        })
+        });
     }
 };
 

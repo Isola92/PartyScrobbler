@@ -18,12 +18,12 @@ let PartyScrobbler = {
  * @returns {boolean}
  */
 PartyScrobbler.compareTrack = function(nextTrack) {
-    return this.lastScrobbledTrack.name !== nextTrack.name || this.lastScrobbledTrack.artist !== nextTrack.artist
+    return this.lastScrobbledTrack.name !== nextTrack.name || this.lastScrobbledTrack.artist !== nextTrack.artist;
 };
 
-PartyScrobbler.addTrack = function(trackdata) {
+PartyScrobbler.addItem = function(trackdata) {
 
-    let track = this.parseTrack(trackdata);
+    let track = this.parseTrack(JSON.parse(trackdata));
 
     if(this.compareTrack(track)){
         this.tracks.push(track);
@@ -41,12 +41,12 @@ PartyScrobbler.parseTrack = function(trackdata) {
 
     let track = trackdata.recenttracks.track[0];
 
-    return  {
-                artist: track.artist['#text'],
-                name: track.name,
-                album: track.album['#text'],
-                image: track.image[3]["#text"]
-            }
+    return {
+        artist: track.artist['#text'],
+        name: track.name,
+        album: track.album['#text'],
+        image: track.image[3]["#text"]
+    };
 };
 
 

@@ -1,9 +1,10 @@
 var http = require('http');
 var moment = require('moment');
+var xml2js = require('xml2js');
 
 var signatures = require('./RequestSignatures.js');
 
-
+var XMLParser = new xml2js.Parser();
 
 let APICommunicator = {
 
@@ -12,12 +13,7 @@ let APICommunicator = {
     sessionTokens: [],
     token: '',
     secret: '446fdb19f81071345f7d2da22e327630',
-
-    getRecentTracks: {
-        host: 'ws.audioscrobbler.com',
-        port: 80,
-        path: '/2.0/?method=user.getrecenttracks&user=HugePackage&api_key=a05b8d216b62ceec197a37a8b9f11f20&format=json&limit=1'
-    },
+    host: '',
 
     scrobbleTrack: {
         host: 'ws.audioscrobbler.com',
@@ -42,7 +38,7 @@ APICommunicator.sendRequest = function(callback, method, username, track){
     console.log(this.getRecentTracks);
     switch (method) {
         case 'getRecentTracks':
-            http.request(this.getRecentTracks, callback).end();
+            http.request(this.getRecentTrack(), callback).end();
             break;
 
         case 'getSession':
@@ -85,8 +81,17 @@ APICommunicator.getSession = function(method, user){
     }
 };
 
+APICommunicator.getRecentTrack = function() {
+
+    return {
+            host: 'ws.audioscrobbler.com',
+            port: 80,
+            path: '/2.0/?method=user.getrecenttracks&user=' + this.gethost() + '&api_key=' + this.getkey() + '&format=json&limit=1'
+    };
+}
+
 APICommunicator.getkey = function() {
-    return this.key
+    return this.key;
 };
 
 APICommunicator.getSessionKey = function (username) {
@@ -101,6 +106,16 @@ APICommunicator.gettoken = function (username) {
 
     return this.token;
 };
+
+APICommunicator.gethost = function () {
+    return this.host;
+};
+
+APICommunicator.addItem = function (body){
+    XMLParser.parseString(body, (err, result) => {
+        this.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
+    });
+}
 
 
 module.exports = APICommunicator;
