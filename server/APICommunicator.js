@@ -1,31 +1,19 @@
-var http = require('http');
-var moment = require('moment');
-var xml2js = require('xml2js');
+let http   = require('http');
+let moment = require('moment');
+let xml2js = require('xml2js');
 
-var signatures = require('./RequestSignatures.js');
+let signatures = require('./RequestSignatures.js');
+let RequestOptions = require('./RequestOptions.js');
+let XMLParser  = new xml2js.Parser();
 
-var XMLParser = new xml2js.Parser();
-
-let APICommunicator = {
-
-    key: 'a05b8d216b62ceec197a37a8b9f11f20',
-    tokens: [],
-    sessionTokens: [],
-    token: '',
-    secret: '446fdb19f81071345f7d2da22e327630',
-    host: '',
-
-    scrobbleTrack: {
-        host: 'ws.audioscrobbler.com',
-        port: 80,
-        method: 'POST',
-        path: '/2.0/',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
-        }
-    }
-};
-
+function APICommunicator(host){
+    this.key = 'a05b8d216b62ceec197a37a8b9f11f20';
+    this.host = host;
+    this.tokens = [];
+    this.sessionTokens = [];
+    this.token = [];
+    this.requestOptions = new RequestOptions(this.key, this.host);
+}
 
 /**
  * Initiates different http-requests depending on the type of method.
@@ -33,91 +21,82 @@ let APICommunicator = {
  * TODO: CHANGE THIS METHOD TO USE THE PARAMS ARRAY INSTEAD
  * TODO: BREAK OUT REQUESTS FROM THIS CLASS
  */
-APICommunicator.sendRequest = function(callback, method, username, track){
+APICommunicator.prototype.sendRequest = function(callback, method, username, track){
 
-    console.log(this.getRecentTracks);
-    switch (method) {
+    switch(method){
+
         case 'getRecentTracks':
-            http.request(this.getRecentTrack(), callback).end();
+            this.makeRecentTrackRequest(callback);
             break;
 
         case 'getSession':
-            http.request(this.getSession('methodauth.getSession', username), callback).end();
+            this.makeSessionRequest('methodauth.getSession', username, callback);
             break;
 
         case 'scrobbleTrack':
-            let req = http.request(this.scrobbleTrack, callback);
-            req.write(this.getScrobbleBody('methodtrack.scrobble', track, username));
-            req.end();
+            this.makeScrobbleRequest(track, username, callback);
+            break;
+
+        default:
+            console.log("No http request method with that name");
     }
 };
 
-APICommunicator.getScrobbleBody = function(method, track, user){
+APICommunicator.prototype.makeScrobbleRequest = function(track, username, callback){
+    let req = http.request(this.requestOptions.getScrobbleTrackOptions(), callback);
+    req.write(this.getScrobbleBody('methodtrack.scrobble', track, username));
+    req.end();
+};
 
-    let sk = this.getSessionKey(user);
-    let time = moment().unix();
-    let encodedtrackname = encodeURIComponent(track.name);
+APICommunicator.prototype.makeRecentTrackRequest = function(callback){
+    http.request(this.requestOptions.getRecentTrackOptions(), callback).end();
+};
+
+APICommunicator.prototype.makeSessionRequest = function(method, user, callback){
+    let token = this.getToken(user);
+    let signature = signatures.getSessionSignature(method, token);
+    http.request(this.requestOptions.getSessionOptions(signature, token), callback).end();
+};
+
+APICommunicator.prototype.getScrobbleBody = function(method, track, user){
+
+    let sk                = this.getSessionKey(user);
+    let time              = moment().unix();
+    let encodedtrackname  = encodeURIComponent(track.name);
     let encodedartistname = encodeURIComponent(track.artist);
 
     let config = {
-        artist: track.artist,
-        method: method,
+        artist:     track.artist,
+        method:     method,
         sessionkey: sk,
-        timestamp: time,
-        track: track.name
+        timestamp:  time,
+        track:      track.name
     };
 
     return 'api_key=' + this.getkey() + '&api_sig=' + signatures.getScrobbleSignature(config) + '&artist=' + encodedartistname + '&method=track.scrobble' + '&sk=' + this.getSessionKey(user) + '&timestamp=' + time + '&track=' + encodedtrackname;
 };
 
-APICommunicator.getSession = function(method, user){
-
-    let signature = signatures.getSessionSignature(method, this.gettoken(user));
-
-    return {
-        host: 'ws.audioscrobbler.com',
-        port: 80,
-        path: '/2.0/?api_key=' + this.getkey() + '&api_sig=' + signature + '&method=auth.getSession&token=' + this.gettoken(user)
-    }
-};
-
-APICommunicator.getRecentTrack = function() {
-
-    return {
-            host: 'ws.audioscrobbler.com',
-            port: 80,
-            path: '/2.0/?method=user.getrecenttracks&user=' + this.gethost() + '&api_key=' + this.getkey() + '&format=json&limit=1'
-    };
-}
-
-APICommunicator.getkey = function() {
+APICommunicator.prototype.getkey = function(){
     return this.key;
 };
 
-APICommunicator.getSessionKey = function (username) {
+APICommunicator.prototype.getSessionKey = function(username){
     return this.sessionTokens[username];
 };
 
-APICommunicator.gettoken = function (username) {
+APICommunicator.prototype.getToken = function(username){
 
-    if (this.tokens[username] !== undefined) {
+    if(this.tokens[username] !== undefined){
         return this.tokens[username];
     }
 
     return this.token;
 };
 
-APICommunicator.gethost = function () {
-    return this.host;
-};
-
-APICommunicator.addItem = function (body){
-    XMLParser.parseString(body, (err, result) => {
+APICommunicator.prototype.addItem = function(body){
+    XMLParser.parseString(body, (err, result) =>{
         this.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
     });
-}
-
+};
 
 module.exports = APICommunicator;
-
-

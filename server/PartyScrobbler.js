@@ -3,25 +3,24 @@
  * @type {{users: Array, tracks: Array, currentTrack: {}, lastScrobbledTrack: {}}}
  */
 
-let PartyScrobbler = {
-    users: [],
-    tracks: [],
-    currentTrack: {},
-    lastScrobbledTrack: {},
-    callback: {}
-
-};
+function PartyScrobbler(){
+    this.users              = [];
+    this.tracks             = [];
+    this.currentTrack       = {};
+    this.lastScrobbledTrack = {};
+    this.callback           = {};
+}
 
 /**
  * Return true if the track is not scrobbled yet.
  * @param nextTrack
  * @returns {boolean}
  */
-PartyScrobbler.compareTrack = function(nextTrack) {
+PartyScrobbler.prototype.compareTrack = function(nextTrack){
     return this.lastScrobbledTrack.name !== nextTrack.name || this.lastScrobbledTrack.artist !== nextTrack.artist;
 };
 
-PartyScrobbler.addItem = function(trackdata) {
+PartyScrobbler.prototype.addItem = function(trackdata){
 
     let track = this.parseTrack(JSON.parse(trackdata));
 
@@ -37,20 +36,20 @@ PartyScrobbler.addItem = function(trackdata) {
  * with the information we actually need.
  * @param trackdata
  */
-PartyScrobbler.parseTrack = function(trackdata) {
+PartyScrobbler.prototype.parseTrack = function(trackdata){
 
     let track = trackdata.recenttracks.track[0];
 
     return {
         artist: track.artist['#text'],
-        name: track.name,
-        album: track.album['#text'],
-        image: track.image[3]["#text"]
+        name:   track.name,
+        album:  track.album['#text'],
+        image:  track.image[3]["#text"]
     };
 };
 
 
-PartyScrobbler.setCallback = function(callback) {
+PartyScrobbler.prototype.setCallback = function(callback){
     this.callback = callback;
 }
 

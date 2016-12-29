@@ -1,7 +1,7 @@
 import { ServerListener } from './ServerCommunicator';
-import { ServerCaller   } from './ServerCommunicator'
-import { viewTrackData  } from './DOMWorker'
-import { viewParty      } from './DOMWorker'
+import { ServerCaller   } from './ServerCommunicator';
+import { viewTrackData  } from './DOMWorker';
+import { viewParty      } from './DOMWorker';
 
 
 let userToken = null;
@@ -12,12 +12,12 @@ let userToken = null;
  */
 document.addEventListener('DOMContentLoaded',  () => {
 
-    ServerListener(displayRecentTrack, onPartyUpdateCB, null);
     let connectButton = document.getElementById('connectButton');
     let authenticateButton = document.getElementById('authenticateButton');
     let authenticateField = document.getElementById('authenticateField');
     let scrobbleButton = document.getElementById('scrobbleButton');
 
+    ServerListener(displayRecentTrack, onPartyUpdateCB, null);
 
     connectButton.addEventListener('click', () => {
         ServerCaller.getLatestTrack();
@@ -29,12 +29,14 @@ document.addEventListener('DOMContentLoaded',  () => {
 
     scrobbleButton.addEventListener('click', () => {
         ServerCaller.scrobbleTrack();
-    })
+    });
 
 });
 
 
 ////////////////  CALLBACKS   ///////////////////
+
+//
 
 const getTokenCB = (data) => {
     userToken = data.token;
@@ -44,11 +46,11 @@ const getTokenCB = (data) => {
 const authenticateUserCB = (data) => {
     console.log(data);
     //document.body.innerHTML = data;
-}
+};
 
 const onPartyUpdateCB = (data) => {
     viewParty(data);
-}
+};
 
 const displayRecentTrack = (track) => {
     viewTrackData(track.artist, track.name, track.image);
