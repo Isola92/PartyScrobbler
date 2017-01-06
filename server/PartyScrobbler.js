@@ -1,14 +1,11 @@
 /**
- * This object is responsible for dealing with tracks.
- * @type {{users: Array, tracks: Array, currentTrack: {}, lastScrobbledTrack: {}}}
+ * This class is responsible for dealing with users and trackdata.
  */
-
-function PartyScrobbler(){
-    this.users              = [];
-    this.tracks             = [];
-    this.currentTrack       = {};
-    this.lastScrobbledTrack = {};
-    this.callback           = {};
+function PartyScrobbler(newTrackNotification){
+    this.users                = [];
+    this.tracks               = [];
+    this.newTrackNotification = newTrackNotification;
+    this.hosts                = {};
 }
 
 /**
@@ -16,18 +13,18 @@ function PartyScrobbler(){
  * @param nextTrack
  * @returns {boolean}
  */
-PartyScrobbler.prototype.compareTrack = function(nextTrack){
-    return this.lastScrobbledTrack.name !== nextTrack.name || this.lastScrobbledTrack.artist !== nextTrack.artist;
+PartyScrobbler.prototype.compareTrack = function(nextTrack, hostname){
+    return this.hosts[hostname].lastscrobbledtrack.name !== nextTrack.name || this.hosts[hostname].lastscrobbledtrack.artist !== nextTrack.artist;
 };
 
-PartyScrobbler.prototype.addItem = function(trackdata){
+PartyScrobbler.prototype.addItem = function(trackdata, hostname){
 
-    let track = this.parseTrack(JSON.parse(trackdata));
+    let track = this.parseTrack(JSON.parse(trackdata))
 
-    if(this.compareTrack(track)){
-        this.tracks.push(track);
-        this.lastScrobbledTrack = track;
-        this.callback.call(this);
+    if(this.compareTrack(track, hostname)){
+        this.hosts[hostname].tracks.push(track);
+        this.hosts[hostname].lastscrobbledtrack = track;
+        this.newTrackNotification(track);
     }
 };
 
@@ -48,9 +45,55 @@ PartyScrobbler.prototype.parseTrack = function(trackdata){
     };
 };
 
+PartyScrobbler.prototype.addHost = function(hostName, socketId){
 
-PartyScrobbler.prototype.setCallback = function(callback){
-    this.callback = callback;
-}
+    if(!this.hosts[hostName]){
+
+        this.hosts[hostName] = {
+            socketid:           socketId,
+            lastscrobbledtrack: {},
+            hostname:           hostName,
+            tracks:             [],
+            listeners:          []
+        };
+        console.log("Successfully added a new host");
+        return;
+    }
+    console.log("Host already exists");
+
+    /*
+
+     let hostnames = this.hosts.map( (host) => {
+     return host.hostname;
+     }) || [];
+
+     if(hostnames.indexOf(hostName) === -1){
+     this.hosts.push({
+     socketid:           socketId,
+     lastscrobbledtrack: {},
+     hostname:           hostName,
+     tracks:             []
+     });
+     }
+     */
+
+
+};
+
+PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
+
+    /*    let hosts = this.hosts.filter( (host) => {
+     return host.hostname !== hostName;
+     }) || [];
+
+
+
+     hosts.push({})*/
+
+    this.hosts[hostName].listeners.push({
+        username: userName,
+        socketid: socketId
+    });
+};
 
 module.exports = PartyScrobbler;

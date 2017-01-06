@@ -1,77 +1,46 @@
-import { ServerListener } from './ServerCommunicator';
-import { ServerCaller   } from './ServerCommunicator';
-import { viewTrackData  } from './DOMWorker';
-import { viewParty      } from './DOMWorker';
-
+import {ServerListener} from './ServerCommunicator';
+import {ServerCaller} from './ServerCommunicator';
+import {viewTrackData} from './DOMWorker';
+import {viewParty} from './DOMWorker';
+import Components from './Components'
+import DomWorker from './DOMWorker';
 
 let userToken = null;
+let hostName = '';
 
 /**
  * Initiates the component who listens for socket.io updates.
  * And some click-events.
  */
-document.addEventListener('DOMContentLoaded',  () => {
+document.addEventListener('DOMContentLoaded', () =>{
 
-    let connectButton = document.getElementById('connectButton');
-    let authenticateButton = document.getElementById('authenticateButton');
-    let authenticateField = document.getElementById('authenticateField');
-    let scrobbleButton = document.getElementById('scrobbleButton');
+    let domWorker = new DomWorker();
+    let components = new Components(domWorker);
+    ServerListener(components);
 
-    ServerListener(displayRecentTrack, onPartyUpdateCB, null);
-
-    connectButton.addEventListener('click', () => {
-        ServerCaller.getLatestTrack();
-    });
-
-    authenticateButton.addEventListener('click', () => {
-        ServerCaller.authenticateUser(authenticateField.value, getParameterByName('token'));
-    });
-
-    scrobbleButton.addEventListener('click', () => {
-        ServerCaller.scrobbleTrack();
-    });
-
+    if(getParameterByName('token')){
+        components.mostRecentlyScrobbledSection();
+        //Here we also need to pass the host.
+        ServerCaller.authenticateUser(getParameterByName('username'), getParameterByName('token'), getParameterByName('host'));
+    }else{
+        components.startSection();
+    }
 });
 
-
-////////////////  CALLBACKS   ///////////////////
-
-//
-
-const getTokenCB = (data) => {
-    userToken = data.token;
-    console.log(data);
-};
-
-const authenticateUserCB = (data) => {
-    console.log(data);
-    //document.body.innerHTML = data;
-};
-
-const onPartyUpdateCB = (data) => {
-    viewParty(data);
-};
-
-const displayRecentTrack = (track) => {
-    viewTrackData(track.artist, track.name, track.image);
-};
-
-
 /**
- * TOOK IT FROM THIS THREAD:
+ * TOOK IT FROM THIS THREAD: http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
  * HOW ARE CLIENT SIDE QUERYSTRINGS NOT A LANGUAGE FEATURE YET SMH.
- * @param name
- * @returns {*}
  */
-function getParameterByName(name) {
-    var url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+function getParameterByName(name){
+    var url     = window.location.href;
+    name        = name.replace(/[\[\]]/g, "\\$&");
+    var regex   = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
         results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
+    if(!results){
+        return null;
+    }
+    if(!results[2]){
+        return '';
+    }
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
-
-///////////////////////////////////////////////
-

@@ -6,6 +6,7 @@ let server          = require('http').createServer(app);
 let io              = require('socket.io')(server);
 let APICommunicator = require('./server/APICommunicator');
 let PartyScrobbler  = require('./server/PartyScrobbler');
+let url             = require('url');
 
 app.use(express.static(path.join(__dirname, './public')));
 
@@ -14,22 +15,28 @@ app.use(express.static(path.join(__dirname, './public')));
  * Requests from the client comes in two forms: 1. Regular http-requests (urls) 2. Data from a socket connection between the client and the server.
  **/
 
-
 let clients = [];
-const PORT  = 3000;
+let address = '';
 let partyScrobbler;
 let apiCommunicator;
 
-/**
- * Initiates the server.
- */
-server.listen(PORT, () =>{
-    console.log('Server listening on port 3000!');
-    apiCommunicator = new APICommunicator(process.argv[2]);
-    partyScrobbler = new PartyScrobbler();
-    partyScrobbler.setCallback(newTrackNotification);
-    checkRecentTrack();
+
+//Shamelessly stolen from: http://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
+require('dns').lookup(require('os').hostname(), (err, ip) =>{
+    initiateServer(3000, ip);
 });
+
+function initiateServer(port, ip){
+
+    server.listen(port, ip, () =>{
+        console.log('Server listening on:' + ip + ':' + port);
+    });
+
+    address         = 'http://' + ip + ':' + port;
+    apiCommunicator = new APICommunicator();
+    partyScrobbler  = new PartyScrobbler(newTrackNotification);
+    checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.
+}
 
 /**
  * Client requesting the start-page.
@@ -42,7 +49,8 @@ app.get('/', (req, res) =>{
  * Client requesting authentication.
  */
 app.get('/authenticate', (req, res) =>{
-    res.redirect('https://www.last.fm/api/auth/?api_key=a05b8d216b62ceec197a37a8b9f11f20&cb=http://192.168.0.190:3000');
+    let queryData = url.parse(req.url, true).query;
+    res.redirect('https://www.last.fm/api/auth/?api_key=a05b8d216b62ceec197a37a8b9f11f20&cb=' + address + '?username=' + queryData.username + "%26host=" + queryData.host);
 });
 
 /**
@@ -59,38 +67,58 @@ io.on('connection', (socket) =>{
 
     // data = {username, token}
     socket.on('token', (data) =>{
-        apiCommunicator.tokens[data.user] = data.token;
-        apiCommunicator.sendRequest(callback.bind(apiCommunicator), 'getSession', data.user);
+        if(!apiCommunicator.tokens[data.user]){
+            apiCommunicator.tokens[data.user] = data.token;
+            apiCommunicator.sendRequest(callback.bind(apiCommunicator, apiCommunicator.addItem), 'getSession', data.user);
+            partyScrobbler.addListener(data.user, data.host, socket.id);
+        }else{
+            partyScrobbler.hosts[data.host].socketid = socket.id;
+        }
     });
 
-    socket.on('scrobbleTrack', (data) =>{
-        scrobbleAllClients();
+    socket.on('host', (hostname) =>{
+        partyScrobbler.addHost(hostname, socket.id);
+    });
+
+    socket.on('user', (data) =>{
+        partyScrobbler.addListener(data.username, data.hostname, socket.id);
     });
 
     socket.on('disconnect', (socket) =>{
         delete clients[socket.id];
     });
+
+    socket.on('party', (hostname) => {
+        socket.emit('party', partyScrobbler.hosts[hostname].listeners.map( (listener) => listener.username));
+    });
 });
 
 /**
- * Bind variable in callback with function.bind(this)
- * and assign it when done.
- * Makes for a more losely coupled function call. Implement this.addTrack in
- * any module who uses the callback. Might switch name on that one huh.
- * Modules currently using:
- * APICommunicator
- * PartyScrobbler
- * @param Answer from some kind of request (HTTP-Requests to last.fm).
+ * CALLBACKS EXPECTS ARGUMENTS IN THE FORM OF:
+ * DATA,
+ * FUNCTION TO CALL WITH PREVIOUSLY MENTIONED DATA,
+ * RESPONSE OBJECT FROM A REQUEST
  */
-const callback = function(response){
+const callback = function(){
     let body = '';
 
+    //Convert arguments to an actual array.
+    let args = [...arguments];
+
+    //The last argument is always the "response" object from any request (currently Http).
+    let response = args.pop();
+
+    //The last argument after that is the function that actually wants the data.
+    let passData = args.pop();
+
+    //The data from our requests might be returned in chunks. We add these together.
     response.on('data', (chunk) =>{
         body += chunk;
     });
 
+    //In the end we pass the received data and any additional parameters to the function.
     response.on('end', () =>{
-        this.addItem(body);
+        passData.apply(this, [body, ...args]);
         console.log('CALLBACK BOUND TO:', this);
         console.log('Containing data: ', body);
     });
@@ -99,6 +127,7 @@ const callback = function(response){
 
 const scrobbleTrackCb = function(response){
     let body = '';
+
     response.on('data', (chunk) =>{
         body += chunk;
     });
@@ -112,16 +141,36 @@ const scrobbleTrackCb = function(response){
  * Callback from the PartyScrobbler when a new track is added.
  * Send the last track and scrobble it.
  */
-const newTrackNotification = function(){
-    iterateOverClients('recenttrack', this.lastScrobbledTrack);
-    scrobbleAllClients(this.lastScrobbledTrack);
+const newTrackNotification = function(track){
+    scrobbleAllClients(track);
 };
 
 const checkRecentTrack = function(){
 
-    var sendRecentTrack = setInterval(() =>{
-        apiCommunicator.sendRequest(callback.bind(partyScrobbler), 'getRecentTracks');
+    let sendRecentTrack = setInterval(() =>{
+
+        Object.keys(partyScrobbler.hosts).forEach((hostname) =>{
+            let recentTrackCallback = callback.bind(partyScrobbler, hostname, partyScrobbler.addItem);
+            apiCommunicator.sendRequest(recentTrackCallback, 'getRecentTracks', null, null, hostname);
+            sendTrackInfoToClients(hostname);
+        });
+
     }, 15000);
+
+    //iterateOverClients('recenttrack', partyhost.lastscrobbledtrack);
+};
+
+const sendTrackInfoToClients = function(hostName){
+
+    let host = partyScrobbler.hosts[hostName];
+    let hostnames = host.listeners.map((listener) => listener.username);
+
+    host.listeners.forEach( (listener) => {
+        clients[listener.socketid].emit('recenttrack', {
+            track: host.lastscrobbledtrack,
+            party: hostnames
+        });
+    })
 };
 
 const iterateOverClients = function(name, value){
@@ -140,12 +189,3 @@ const scrobbleAllClients = function(track){
         apiCommunicator.sendRequest(scrobbleTrackCb, 'scrobbleTrack', username, track);
     });
 };
-
-
-
-
-
-
-
-
-

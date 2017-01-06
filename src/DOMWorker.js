@@ -1,37 +1,46 @@
 /**
- * Takes in data and modifies the DOM accordingly.
+ * Utility class for modifying the DOM.
+ * @constructor
  */
-export const viewTrackData = (artist, track, imgurl) =>{
-    let artistname = document.getElementById('artist');
-    let trackname  = document.getElementById('track');
+function DomWorker(){
 
-    artistname.innerHTML = artist + " - ";
-    trackname.innerHTML  = track;
+}
 
-    updateBackground(imgurl);
-};
+DomWorker.prototype.createElements = function(elementTypes, ids, texts, containerIncluded){
+    let elements = [];
 
+    elementTypes.forEach((elementType, index) =>{
+        elements.push(document.createElement(elementType));
 
-const updateBackground = (imgurl) =>{
-    let image = document.getElementById('image');
-    image.src = imgurl;
-};
+        if(ids){
+            elements[index].id = ids[index];
+        }
 
-const getTextFieldInfo = () =>{
-    document.getElementById('')
-};
+        if(texts){
+            elements[index].innerHTML = texts[index] || '';
+        }
+    });
 
-
-export const viewParty = (users) =>{
-    let party = document.getElementById('party')
-
-    while(party.firstChild){
-        party.removeChild(party.firstChild);
+    if(containerIncluded){
+        this.appendChildren(elements[0], elements.slice(1, elements.length));
     }
 
-    users.forEach((user) =>{
-        let listitem       = document.createElement('LI');
-        listitem.innerHTML = user;
-        party.appendChild(listitem);
-    })
-}
+    return elements;
+};
+
+DomWorker.prototype.appendClassName = function(elements, className){
+
+    elements.forEach((element) =>{
+        element.className = className;
+    });
+
+    return elements;
+};
+
+DomWorker.prototype.appendChildren = function(parent, elements){
+    elements.forEach((element) =>{
+        parent.appendChild(element);
+    });
+};
+
+export default DomWorker;

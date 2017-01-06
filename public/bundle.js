@@ -53,7 +53,16 @@
 	
 	var _DOMWorker = __webpack_require__(/*! ./DOMWorker */ 49);
 	
+	var _DOMWorker2 = _interopRequireDefault(_DOMWorker);
+	
+	var _Components = __webpack_require__(/*! ./Components */ 50);
+	
+	var _Components2 = _interopRequireDefault(_Components);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	var userToken = null;
+	var hostName = '';
 	
 	/**
 	 * Initiates the component who listens for socket.io updates.
@@ -61,56 +70,36 @@
 	 */
 	document.addEventListener('DOMContentLoaded', function () {
 	
-	    (0, _ServerCommunicator.ServerListener)(displayRecentTrack, onPartyUpdateCB, null);
-	    var connectButton = document.getElementById('connectButton');
-	    var authenticateButton = document.getElementById('authenticateButton');
-	    var authenticateField = document.getElementById('authenticateField');
-	    var scrobbleButton = document.getElementById('scrobbleButton');
+	    var domWorker = new _DOMWorker2.default();
+	    var components = new _Components2.default(domWorker);
+	    (0, _ServerCommunicator.ServerListener)(components);
 	
-	    connectButton.addEventListener('click', function () {
-	        _ServerCommunicator.ServerCaller.getLatestTrack();
-	    });
-	
-	    authenticateButton.addEventListener('click', function () {
-	        _ServerCommunicator.ServerCaller.authenticateUser(authenticateField.value, getParameterByName('token'));
-	    });
-	
-	    scrobbleButton.addEventListener('click', function () {
-	        _ServerCommunicator.ServerCaller.scrobbleTrack();
-	    });
+	    if (getParameterByName('token')) {
+	        components.mostRecentlyScrobbledSection();
+	        //Here we also need to pass the host.
+	        _ServerCommunicator.ServerCaller.authenticateUser(getParameterByName('username'), getParameterByName('token'), getParameterByName('host'));
+	    } else {
+	        components.startSection();
+	    }
 	});
 	
-	////////////////  CALLBACKS   ///////////////////
-	
-	var getTokenCB = function getTokenCB(data) {
-	    userToken = data.token;
-	    console.log(data);
-	};
-	
-	var authenticateUserCB = function authenticateUserCB(data) {
-	    console.log(data);
-	    //document.body.innerHTML = data;
-	};
-	
-	var onPartyUpdateCB = function onPartyUpdateCB(data) {
-	    (0, _DOMWorker.viewParty)(data);
-	};
-	
-	var displayRecentTrack = function displayRecentTrack(track) {
-	    (0, _DOMWorker.viewTrackData)(track.artist, track.name, track.image);
-	};
-	
+	/**
+	 * TOOK IT FROM THIS THREAD: http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+	 * HOW ARE CLIENT SIDE QUERYSTRINGS NOT A LANGUAGE FEATURE YET SMH.
+	 */
 	function getParameterByName(name) {
 	    var url = window.location.href;
 	    name = name.replace(/[\[\]]/g, "\\$&");
 	    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
 	        results = regex.exec(url);
-	    if (!results) return null;
-	    if (!results[2]) return '';
+	    if (!results) {
+	        return null;
+	    }
+	    if (!results[2]) {
+	        return '';
+	    }
 	    return decodeURIComponent(results[2].replace(/\+/g, " "));
 	}
-	
-	///////////////////////////////////////////////
 
 /***/ },
 /* 1 */
@@ -132,21 +121,22 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var socket = (0, _socket2.default)('192.168.0.190:3000/', { 'force new connection': true });
+	var socket = (0, _socket2.default)(window.location.href, { 'force new connection': true });
 	
 	/**
 	 * Listens to a socket connection.
 	 * Fires callbacks to the index.js which updates the DOM and shit.
 	 */
-	var ServerListener = exports.ServerListener = function ServerListener(onLatestTrack, onPartyUpdate, onNews) {
+	var ServerListener = exports.ServerListener = function ServerListener(components) {
 	
 	    socket.on('recenttrack', function (data) {
-	        onLatestTrack(data);
+	        components.viewTrackData(data.track);
+	        components.viewParty(data.party);
 	    });
 	
-	    socket.on('party', function (data) {
-	        onPartyUpdate(data);
-	    });
+	    socket.on('party', function (data) {});
+	
+	    socket.on('host', function (data) {});
 	};
 	
 	/**
@@ -158,14 +148,21 @@
 	        socket.emit('recenttrack', null);
 	    },
 	
-	    authenticateUser: function authenticateUser(user, token) {
-	        socket.emit('token', { user: user, token: token });
+	    authenticateUser: function authenticateUser(user, token, host) {
+	        socket.emit('token', { user: user, token: token, host: host });
 	    },
 	
 	    scrobbleTrack: function scrobbleTrack() {
 	        socket.emit('scrobbleTrack', null);
-	    }
+	    },
 	
+	    newHost: function newHost(hostname) {
+	        socket.emit('host', hostname);
+	    },
+	
+	    getParty: function getParty() {
+	        socket.emit('party', '');
+	    }
 	};
 
 /***/ },
@@ -7777,40 +7774,148 @@
 	    value: true
 	});
 	/**
-	 * Takes in data and modifies the DOM accordingly.
+	 * Utility class for modifying the DOM.
+	 * @constructor
 	 */
-	var viewTrackData = exports.viewTrackData = function viewTrackData(artist, track, imgurl) {
+	function DomWorker() {}
+	
+	DomWorker.prototype.createElements = function (elementTypes, ids, texts, containerIncluded) {
+	    var elements = [];
+	
+	    elementTypes.forEach(function (elementType, index) {
+	        elements.push(document.createElement(elementType));
+	
+	        if (ids) {
+	            elements[index].id = ids[index];
+	        }
+	
+	        if (texts) {
+	            elements[index].innerHTML = texts[index] || '';
+	        }
+	    });
+	
+	    if (containerIncluded) {
+	        this.appendChildren(elements[0], elements.slice(1, elements.length));
+	    }
+	
+	    return elements;
+	};
+	
+	DomWorker.prototype.appendClassName = function (elements, className) {
+	
+	    elements.forEach(function (element) {
+	        element.className = className;
+	    });
+	
+	    return elements;
+	};
+	
+	DomWorker.prototype.appendChildren = function (parent, elements) {
+	    elements.forEach(function (element) {
+	        parent.appendChild(element);
+	    });
+	};
+	
+	exports.default = DomWorker;
+
+/***/ },
+/* 50 */
+/*!***************************!*\
+  !*** ./src/Components.js ***!
+  \***************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _ServerCommunicator = __webpack_require__(/*! ./ServerCommunicator */ 1);
+	
+	var _DOMWorker = __webpack_require__(/*! ./DOMWorker */ 49);
+	
+	var _DOMWorker2 = _interopRequireDefault(_DOMWorker);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * This class uses DOMWorker utilities to generate HTML.
+	 * I created this library because I wanted a convenient way to add/remove
+	 * components on a single HTML-file without a SPA-framework dependencies.
+	 * It's pretty shitty but it's a good way for me to learn the DOM API.
+	 *
+	 * Todo: Move the element specific info such as type/id/text to JSON-objects.
+	 */
+	
+	function Components(domWorker) {
+	    this.wrapper = document.getElementById('wrapper');
+	    this.domWorker = domWorker;
+	}
+	
+	Components.prototype.inputSection = function (token) {
+	    var section = document.createElement('section');
+	
+	    var elements = this.domWorker.createElements(['input', 'button'], ['authenticateField', 'authenticateButton'], ['', 'Submit']);
+	    elements = this.domWorker.appendClassName(elements, 'input');
+	
+	    this.domWorker.appendChildren(section, elements);
+	
+	    //document.getElementById('wrapper').insertAfter(section, document.getElementByTagName('wrapper').firstChild);
+	    document.getElementById('wrapper').appendChild(section);
+	
+	    elements[1].addEventListener('click', function () {
+	        _ServerCommunicator.ServerCaller.authenticateUser(input.value, token);
+	    });
+	};
+	
+	Components.prototype.startSection = function () {
+	    var section = document.createElement('section');
+	    var elements = this.domWorker.appendClassName(this.domWorker.createElements(['input', 'button', 'input', 'input', 'button'], null, ['', 'Host Party', '', '', 'Join Party']), 'input');
+	    this.domWorker.appendChildren(section, elements);
+	    this.wrapper.appendChild(section);
+	
+	    elements[1].addEventListener('click', function () {
+	        _ServerCommunicator.ServerCaller.newHost(elements[0].value);
+	    });
+	
+	    elements[4].addEventListener('click', function () {
+	        window.location += 'authenticate?username=' + elements[2].value + "&host=" + elements[3].value;
+	    });
+	};
+	
+	Components.prototype.mostRecentlyScrobbledSection = function () {
+	    var elements = this.domWorker.createElements(['section', 'h2', 'span', 'span', 'img'], ['', '', 'artist', 'track', 'image'], ['Most recently scrobbled track'], true);
+	    this.wrapper.appendChild(elements[0]);
+	};
+	
+	Components.prototype.viewTrackData = function (track) {
 	    var artistname = document.getElementById('artist');
 	    var trackname = document.getElementById('track');
 	
-	    artistname.innerHTML = artist + " - ";
-	    trackname.innerHTML = track;
+	    artistname.innerHTML = track.artist + " - ";
+	    trackname.innerHTML = track.name;
 	
-	    updateBackground(imgurl);
-	};
-	
-	var updateBackground = function updateBackground(imgurl) {
 	    var image = document.getElementById('image');
-	    image.src = imgurl;
+	    image.src = track.image;
 	};
 	
-	var getTextFieldInfo = function getTextFieldInfo() {
-	    document.getElementById('');
-	};
+	Components.prototype.viewParty = function (users) {
 	
-	var viewParty = exports.viewParty = function viewParty(users) {
-	    var party = document.getElementById('party');
+	    var element = document.getElementById('party');
+	    this.wrapper.removeChild(element);
 	
-	    while (party.firstChild) {
-	        party.removeChild(party.firstChild);
-	    }
+	    var party = this.domWorker.createElements(['section', 'ul'], ['party', 'partylist'], null, true);
 	
 	    users.forEach(function (user) {
 	        var listitem = document.createElement('LI');
 	        listitem.innerHTML = user;
-	        party.appendChild(listitem);
+	        party[1].appendChild(listitem);
 	    });
+	
+	    this.wrapper.appendChild(party[0]);
 	};
+	exports.default = Components;
 
 /***/ }
 /******/ ]);

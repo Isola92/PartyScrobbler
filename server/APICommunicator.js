@@ -8,11 +8,11 @@ let XMLParser  = new xml2js.Parser();
 
 function APICommunicator(host){
     this.key = 'a05b8d216b62ceec197a37a8b9f11f20';
-    this.host = host;
+    this.hosts = [host];
     this.tokens = [];
     this.sessionTokens = [];
     this.token = [];
-    this.requestOptions = new RequestOptions(this.key, this.host);
+    this.requestOptions = new RequestOptions(this.key);
 }
 
 /**
@@ -21,12 +21,12 @@ function APICommunicator(host){
  * TODO: CHANGE THIS METHOD TO USE THE PARAMS ARRAY INSTEAD
  * TODO: BREAK OUT REQUESTS FROM THIS CLASS
  */
-APICommunicator.prototype.sendRequest = function(callback, method, username, track){
+APICommunicator.prototype.sendRequest = function(callback, method, username, track, host){
 
     switch(method){
 
         case 'getRecentTracks':
-            this.makeRecentTrackRequest(callback);
+            this.makeRecentTrackRequest(callback, host);
             break;
 
         case 'getSession':
@@ -48,8 +48,8 @@ APICommunicator.prototype.makeScrobbleRequest = function(track, username, callba
     req.end();
 };
 
-APICommunicator.prototype.makeRecentTrackRequest = function(callback){
-    http.request(this.requestOptions.getRecentTrackOptions(), callback).end();
+APICommunicator.prototype.makeRecentTrackRequest = function(callback, host){
+    http.request(this.requestOptions.getRecentTrackOptions(host), callback).end();
 };
 
 APICommunicator.prototype.makeSessionRequest = function(method, user, callback){

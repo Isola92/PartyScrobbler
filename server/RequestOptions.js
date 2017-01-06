@@ -1,9 +1,8 @@
 /**
- * Methods responsible for returning the option object you pass to a httprequest.
+ * Methods responsible for returning the option object you pass to a node httprequest.
  */
-function RequestOptions(key, host){
+function RequestOptions(key){
     this.key = key;
-    this.host = host;
 }
 
 RequestOptions.prototype.getSessionOptions = function(signature, token){
@@ -15,12 +14,12 @@ RequestOptions.prototype.getSessionOptions = function(signature, token){
     };
 };
 
-RequestOptions.prototype.getRecentTrackOptions = function(){
+RequestOptions.prototype.getRecentTrackOptions = function(host){
 
     return {
         host: 'ws.audioscrobbler.com',
         port: 80,
-        path: '/2.0/?method=user.getrecenttracks&user=' + this.host + '&api_key=' + this.key + '&format=json&limit=1'
+        path: '/2.0/?method=user.getrecenttracks&user=' + host + '&api_key=' + this.key + '&format=json&limit=1'
     };
 };
 

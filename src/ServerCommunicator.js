@@ -1,24 +1,26 @@
 import io from 'socket.io-client';
 
-let socket = io('192.168.0.190:3000/', {'force new connection': true});
+let socket = io(window.location.href, {'force new connection': true});
 
 /**
  * Listens to a socket connection.
  * Fires callbacks to the index.js which updates the DOM and shit.
  */
-export const ServerListener = (onLatestTrack, onPartyUpdate, onNews) => {
+export const ServerListener = (components) => {
 
     socket.on('recenttrack', (data) => {
-        onLatestTrack(data);
+        components.viewTrackData(data.track);
+        components.viewParty(data.party);
     });
-
 
     socket.on('party', (data) => {
-        onPartyUpdate(data);
+
     });
 
-};
+    socket.on('host', (data) => {
 
+    })
+};
 
 /**
  * Sends data through a socket connection.
@@ -29,12 +31,19 @@ export const ServerCaller = {
         socket.emit('recenttrack', null);
     },
 
-    authenticateUser: (user, token) => {
-        socket.emit('token', {user, token});
+    authenticateUser: (user, token, host) => {
+        socket.emit('token', {user, token, host});
     },
 
     scrobbleTrack: () => {
         socket.emit('scrobbleTrack', null);
-    }
+    },
 
-}
+    newHost: (hostname) => {
+        socket.emit('host', hostname);
+    },
+
+    getParty: () => {
+        socket.emit('party', '');
+    }
+};
