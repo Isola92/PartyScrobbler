@@ -20,12 +20,16 @@ section, h1, h2 {
     text-align: center;
 }
 
-.input {
+input, button{
     border-radius: 5px;
     height: 50px;
     width: 70%;
     display: block;
     margin: 10px auto;
+}
+
+label {
+    display: inline;
 }
 
 section {
@@ -49,7 +53,7 @@ ul li {
     list-style: none;
 }
 
-h1, h2, p, li, button, span {
+h1, h2, p, li, button, span, input {
     font-variant-caps: all-small-caps;
 }
 

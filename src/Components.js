@@ -11,7 +11,7 @@ import DomWorker from './DOMWorker';
  */
 
 function Components(domWorker){
-    this.wrapper = document.getElementById('wrapper');
+    this.wrapper   = document.getElementById('wrapper');
     this.domWorker = domWorker;
 }
 
@@ -19,7 +19,7 @@ Components.prototype.inputSection = function(token){
     let section = document.createElement('section');
 
     let elements = this.domWorker.createElements(['input', 'button'], ['authenticateField', 'authenticateButton'], ['', 'Submit']);
-    elements = this.domWorker.appendClassName(elements, 'input');
+    elements     = this.domWorker.appendClassName(elements, 'input');
 
     this.domWorker.appendChildren(section, elements);
 
@@ -32,28 +32,69 @@ Components.prototype.inputSection = function(token){
 };
 
 Components.prototype.startSection = function(){
-    let section    = document.createElement('section');
+    let section  = document.createElement('section');
+    section.id = 'startsection';
     let elements = this.domWorker.appendClassName(this.domWorker.createElements(['input', 'button', 'input', 'input', 'button'], null, ['', 'Host Party', '', '', 'Join Party']), 'input');
     this.domWorker.appendChildren(section, elements);
     this.wrapper.appendChild(section);
 
-    elements[1].addEventListener('click', () => {
+    elements[1].addEventListener('click', () =>{
         ServerCaller.newHost(elements[0].value);
     });
 
-    elements[4].addEventListener('click', () => {
+    elements[4].addEventListener('click', () =>{
         window.location += 'authenticate?username=' + elements[2].value + "&host=" + elements[3].value;
     });
-
-
 };
 
+Components.prototype.hostSection = function(){
+
+    let elements = this.domWorker.createElements(
+        ['section','input', 'button'],
+        null,
+        ['', 'hostname', "Host Party"],
+        true
+    );
+
+    this.wrapper.appendChild(elements[0]);
+
+    elements[0].id = 'hostSection';
+    elements[1].placeholder="Hostname";
+    elements[2].addEventListener('click', () => {
+        ServerCaller.newHost(elements[1].value);
+    });
+};
+
+Components.prototype.joinSection = function(){
+    let elements = this.domWorker.createElements(
+        ['section', 'input', 'input', 'button'],
+        null,
+        ['', '', '', 'Join Party'],
+        true
+    );
+
+    this.wrapper.appendChild(elements[0]);
+
+    elements[0].id = 'joinSection';
+    elements[1].placeholder="Username";
+    elements[2].placeholder="Hostname";
+    elements[3].addEventListener('click', () => {
+        window.location += 'authenticate?username=' + elements[1].value + "&host=" + elements[2].value;
+    });
+}
+
 Components.prototype.mostRecentlyScrobbledSection = function(){
-    let elements = this.domWorker.createElements(['section', 'h2', 'span', 'span', 'img'], ['', '', 'artist', 'track', 'image'], ['Most recently scrobbled track'], true);
+
+    let elements = this.domWorker.createElements(
+        ['section', 'h2', 'span', 'span', 'img'],
+        ['', '', 'artist', 'track', 'image'],
+        ['Most recently scrobbled track'],
+        true);
+
     this.wrapper.appendChild(elements[0]);
 };
 
-Components.prototype.viewTrackData = function (track){
+Components.prototype.viewTrackData = function(track){
     let artistname = document.getElementById('artist');
     let trackname  = document.getElementById('track');
 
@@ -64,19 +105,53 @@ Components.prototype.viewTrackData = function (track){
     image.src = track.image;
 };
 
-Components.prototype.viewParty = function (users) {
+Components.prototype.viewParty = function(users){
 
     let element = document.getElementById('party');
-    this.wrapper.removeChild(element);
 
-    let party = this.domWorker.createElements(['section', 'h2', 'ul'], ['party', '', 'partylist'], ['', 'Users in party', ''], true);
+    if(element){
+        this.wrapper.removeChild(element);
+    }
 
-    users.forEach((user) =>{
-        let listitem       = document.createElement('LI');
-        listitem.innerHTML = user;
-        party[1].appendChild(listitem);
-    })
+    let party = this.domWorker.createElements(
+        ['section', 'h2', 'ul'],
+        ['party', '', 'partylist'],
+        ['', 'Users in party', ''],
+        true);
+
+    if(users.length > 0){
+        users.forEach((user) =>{
+            let listitem       = document.createElement('LI');
+            listitem.innerHTML = user;
+            party[2].appendChild(listitem);
+        });
+    }else{
+            party[1].innerHTML = 'Currently no users in your party!'
+    }
 
     this.wrapper.appendChild(party[0]);
+};
+
+Components.prototype.hostView = function(){
+    let joinsection = document.getElementById('joinSection');
+    let hostsection = document.getElementById('hostSection');
+    //let startview = document.getElementById('startsection');
+
+
+    if(hostsection && joinsection){
+        this.wrapper.removeChild(hostsection);
+        this.wrapper.removeChild(joinsection);
+    }
+
+    let hostview = this.domWorker.createElements(
+        ['section', 'h2'],
+        ['hostview', ''],
+        ['', 'Now hosting a party!'],
+        true);
+
+    this.wrapper.appendChild(hostview[0]);
+
+    this.mostRecentlyScrobbledSection();
+    this.viewParty([]);
 };
 export default Components;

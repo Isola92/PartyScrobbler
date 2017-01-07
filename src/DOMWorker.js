@@ -17,7 +17,7 @@ DomWorker.prototype.createElements = function(elementTypes, ids, texts, containe
         }
 
         if(texts){
-            elements[index].innerHTML = texts[index] || '';
+            elements[index].textContent = texts[index] || '';
         }
     });
 

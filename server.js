@@ -78,13 +78,14 @@ io.on('connection', (socket) =>{
 
     socket.on('host', (hostname) =>{
         partyScrobbler.addHost(hostname, socket.id);
+        socket.emit('host', 'success');
     });
 
     socket.on('user', (data) =>{
         partyScrobbler.addListener(data.username, data.hostname, socket.id);
     });
 
-    socket.on('disconnect', (socket) =>{
+    socket.on('disconnect', () =>{
         delete clients[socket.id];
     });
 
@@ -119,8 +120,6 @@ const callback = function(){
     //In the end we pass the received data and any additional parameters to the function.
     response.on('end', () =>{
         passData.apply(this, [body, ...args]);
-        console.log('CALLBACK BOUND TO:', this);
-        console.log('Containing data: ', body);
     });
 };
 
@@ -157,7 +156,7 @@ const checkRecentTrack = function(){
 
     }, 15000);
 
-    //iterateOverClients('recenttrack', partyhost.lastscrobbledtrack);
+
 };
 
 const sendTrackInfoToClients = function(hostName){
@@ -165,7 +164,8 @@ const sendTrackInfoToClients = function(hostName){
     let host = partyScrobbler.hosts[hostName];
     let hostnames = host.listeners.map((listener) => listener.username);
 
-    host.listeners.forEach( (listener) => {
+    //Notify all clients, including the host, about most recent track.
+    host.listeners.concat(host).forEach( (listener) => {
         clients[listener.socketid].emit('recenttrack', {
             track: host.lastscrobbledtrack,
             party: hostnames
@@ -173,12 +173,14 @@ const sendTrackInfoToClients = function(hostName){
     })
 };
 
-const iterateOverClients = function(name, value){
+const iterateOverClients = function(clientId, identifier, value){
     let keys = Object.keys(clients);
 
     keys.forEach((key) =>{
         clients[key].emit(name, value);
     });
+
+
 };
 
 /**

@@ -2,7 +2,6 @@
  * This class is responsible for dealing with users and trackdata.
  */
 function PartyScrobbler(newTrackNotification){
-    this.users                = [];
     this.tracks               = [];
     this.newTrackNotification = newTrackNotification;
     this.hosts                = {};
@@ -26,6 +25,8 @@ PartyScrobbler.prototype.addItem = function(trackdata, hostname){
         this.hosts[hostname].lastscrobbledtrack = track;
         this.newTrackNotification(track);
     }
+
+    console.log("Most recently scrobbled track:", track);
 };
 
 /**
@@ -58,42 +59,35 @@ PartyScrobbler.prototype.addHost = function(hostName, socketId){
         };
         console.log("Successfully added a new host");
         return;
+    }else{
+        this.hosts[hostName].socketid = socketId;
     }
     console.log("Host already exists");
-
-    /*
-
-     let hostnames = this.hosts.map( (host) => {
-     return host.hostname;
-     }) || [];
-
-     if(hostnames.indexOf(hostName) === -1){
-     this.hosts.push({
-     socketid:           socketId,
-     lastscrobbledtrack: {},
-     hostname:           hostName,
-     tracks:             []
-     });
-     }
-     */
-
-
 };
 
 PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
-
-    /*    let hosts = this.hosts.filter( (host) => {
-     return host.hostname !== hostName;
-     }) || [];
-
-
-
-     hosts.push({})*/
 
     this.hosts[hostName].listeners.push({
         username: userName,
         socketid: socketId
     });
+
+    console.log("A new listener has joined: Username: " + userName + " \nHostname " + hostName);
 };
+
+/**
+ * Adds users and hosts together and returns one based on it's client-id.
+ */
+PartyScrobbler.prototype.getUserFromClientId = function(socketId){
+    let users = [];
+
+    for(var host in this.hosts){
+        users = temp.concat(host, host.listeners);
+    }
+
+    return users.find((user) =>{
+        return user.socketid === socketId
+    })
+}
 
 module.exports = PartyScrobbler;

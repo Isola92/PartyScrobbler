@@ -18,7 +18,7 @@ export const ServerListener = (components) => {
     });
 
     socket.on('host', (data) => {
-
+        components.hostView();
     })
 };
 
