@@ -19,20 +19,21 @@ let clients = [];
 let address = '';
 let partyScrobbler;
 let apiCommunicator;
-
+let PORT =  process.env.PORT || 5000;
 
 //Shamelessly stolen from: http://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
 require('dns').lookup(require('os').hostname(), (err, ip) =>{
-    initiateServer(3000, ip);
+    initiateServer(PORT);
 });
 
-function initiateServer(port, ip){
+function initiateServer(port){
 
-    server.listen(port, ip, () =>{
-        console.log('Server listening on:' + ip + ':' + port);
+    server.listen(port, () =>{
+        console.log('Server listening on:', port);
     });
 
-    address         = 'http://' + ip + ':' + port;
+    //address         = 'http://' + ip + ':' + port;
+    address = "https://partyscrobbler.herokuapp.com/";
     apiCommunicator = new APICommunicator();
     partyScrobbler  = new PartyScrobbler(newTrackNotification);
     checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.

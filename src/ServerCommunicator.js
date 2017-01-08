@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 
-let socket = io(window.location.href, {'force new connection': true});
+let socket = io('https://partyscrobbler.herokuapp.com/', {'force new connection': true});
 
 /**
  * Listens to a socket connection.
