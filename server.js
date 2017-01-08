@@ -119,6 +119,7 @@ const callback = function(){
 
     //In the end we pass the received data and any additional parameters to the function.
     response.on('end', () =>{
+        console.log("Callback response: " + response);
         passData.apply(this, [body, ...args]);
     });
 };

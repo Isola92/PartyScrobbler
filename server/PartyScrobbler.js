@@ -65,14 +65,25 @@ PartyScrobbler.prototype.addHost = function(hostName, socketId){
     console.log("Host already exists");
 };
 
+/**
+ * Adds a new listener to an array on a host object.
+ * If the user already exists it's removed and then added again.
+ */
 PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
 
-    this.hosts[hostName].listeners.push({
-        username: userName,
-        socketid: socketId
-    });
+    if(this.hosts[hostName]){
 
-    console.log("A new listener has joined: Username: " + userName + " \nHostname " + hostName);
+        this.hosts[hostName].listeners = this.hosts[hostName].listeners.filter( (listener) => {
+            return listener.username !== userName;
+        });
+
+        this.hosts[hostName].listeners.push({
+            username: userName,
+            socketid: socketId
+        });
+
+        console.log("A new listener has joined: Username: " + userName + " \nHostname " + hostName);
+    }
 };
 
 /**
@@ -81,9 +92,15 @@ PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
 PartyScrobbler.prototype.getUserFromClientId = function(socketId){
     let users = [];
 
-    for(var host in this.hosts){
-        users = temp.concat(host, host.listeners);
-    }
+    Object.keys(this.hosts).forEach( (key) => {
+        let host = this.hosts[key];
+
+        if(host.listeners){
+            host = host.listeners.concat(host)
+        }
+
+        users = users.concat(host);
+    });
 
     return users.find((user) =>{
         return user.socketid === socketId
