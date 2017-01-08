@@ -1,8 +1,10 @@
 # PartyScrobbler
 
-## ANOTHER GROUP LISTENING TOOL FOR LAST.FM. 
+* Another group listening tool for last.fm. 
 
-## FETCHES THE LAST SCROBBLED TRACK FOR A USER (HOST) AND SCROBBLES THAT TRACK FOR ALL OTHER USERS IN A PARTY.
+* Fetches the last scrobbled track for a user and scrobbles that track for all other users in a party.
+
+* The host is playing music as usual. The app is not scrobbling for the host.
 
 ## CHECK RELEASE BRANCH FOR THE LATEST CODE, WHICH IS RUNNING THE HOSTED VERSION
 
