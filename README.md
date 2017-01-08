@@ -23,7 +23,7 @@ Friends can now join your session by entering their username and the hostname on
 
 #### Start the server:
 
-1. Download the code from the master branch. Might need some modifications to work.
+1. Download the code from the 'singlehost' branch. Might need some modifications to work.
 2. Start the command prompt where the folder is or navigate to the folder through the command prompt.
 3. When you're in the right location, start the server by typing: node server.js _USERNAME_. _USERNAME_ is the username of the host.  
 4. If everything is fine you should see something like: 
