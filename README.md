@@ -48,7 +48,7 @@ Friends can now join your session by entering their username and the hostname on
 
 #### "WOW THATS JUST TOO MANY STEPS MAN" 
 
-I know! Just use the hosted version. I added this readme before I decided to make the server accept multiple hosts. 
+I know! Just use the hosted version. I added this readme for some friends before I decided to make it work live. Felt sad removing all the text I wrote.
 
 ## Functionality
 
@@ -59,15 +59,8 @@ I know! Just use the hosted version. I added this readme before I decided to mak
 * The server gives the client access to the _public_ folder.
 
 ### How the scrobbling is implemented
-1 A basic interval is running, making GET requests to the last.fm API every 15 seconds, checking if the hosts most recently scrobbled track is a new one. 
+1. A basic interval is running, making GET requests to the last.fm API every 15 seconds, checking if the hosts most recently scrobbled track is a new one. 
 
-2 If a new one is found, it will be added to the server. 
+2. If a new one is found, it will be added to the server. 
 
-3 The server then iterates over the registered users and makes one track.scrobble POST request to the last.fm API for every user.  
-
-
-
-
-
-
-
+3. The server then iterates over the registered users and makes one track.scrobble POST request to the last.fm API for every user.  
