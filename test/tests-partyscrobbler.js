@@ -72,6 +72,16 @@ describe('PartyScrobbler', () => {
                 assert.equal(partyScrobbler.getUserFromClientId(index).username, username)
             })
         })
+
+        it('removeusers', () => {
+            let partyScrobbler = new PartyScrobbler();
+            partyScrobbler.addHost('Host1', 5);
+            partyScrobbler.addListener('Listener1', 'Host1', 10);
+            assert.equal(partyScrobbler.getUserFromClientId(5).hostname, 'Host1');
+            assert.equal(partyScrobbler.getUserFromClientId(10).username, 'Listener1');
+            partyScrobbler.removeUser(10);
+            assert.equal(partyScrobbler.getUserFromClientId(10), undefined);
+        })
     })
 });
 

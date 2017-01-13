@@ -1,6 +1,8 @@
 import io from 'socket.io-client';
 
-let socket = io('https://partyscrobbler.herokuapp.com/', {'force new connection': true});
+let localhost =  'http://localhost:5000/';
+let officialhost = 'https://partyscrobbler.herokuapp.com/';
+let socket = io(localhost, {'force new connection': true});
 
 /**
  * Listens to a socket connection.
@@ -32,7 +34,7 @@ export const ServerCaller = {
     },
 
     authenticateUser: (user, token, host) => {
-        socket.emit('token', {user, token, host});
+        socket.emit('user', {user, token, host});
     },
 
     scrobbleTrack: () => {

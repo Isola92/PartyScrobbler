@@ -124,7 +124,9 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var socket = (0, _socket2.default)('https://partyscrobbler.herokuapp.com/', { 'force new connection': true });
+	var localhost = 'http://localhost:5000/';
+	var officialhost = 'https://partyscrobbler.herokuapp.com/';
+	var socket = (0, _socket2.default)(localhost, { 'force new connection': true });
 	
 	/**
 	 * Listens to a socket connection.
@@ -154,7 +156,7 @@
 	    },
 	
 	    authenticateUser: function authenticateUser(user, token, host) {
-	        socket.emit('token', { user: user, token: token, host: host });
+	        socket.emit('user', { user: user, token: token, host: host });
 	    },
 	
 	    scrobbleTrack: function scrobbleTrack() {

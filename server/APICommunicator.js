@@ -5,6 +5,7 @@ let xml2js = require('xml2js');
 let signatures = require('./RequestSignatures.js');
 let RequestOptions = require('./RequestOptions.js');
 let XMLParser  = new xml2js.Parser();
+let callbacks = require('./Callback');
 
 function APICommunicator(host){
     this.key = 'a05b8d216b62ceec197a37a8b9f11f20';
@@ -22,6 +23,8 @@ function APICommunicator(host){
  * TODO: BREAK OUT REQUESTS FROM THIS CLASS
  */
 APICommunicator.prototype.sendRequest = function(callback, method, username, track, host){
+
+    console.log("Initiating request:", method);
 
     switch(method){
 
@@ -97,6 +100,23 @@ APICommunicator.prototype.addItem = function(body){
     XMLParser.parseString(body, (err, result) =>{
         this.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
     });
+};
+
+APICommunicator.prototype.addToken = function(user, token){
+    this.tokens[user] = token;
+}
+
+
+/**
+ * Iterate over the clients and initiate one scrobble POST request for each.
+ * Should change this method to take in a hostname as well. Then scrobble each
+ * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
+ */
+APICommunicator.prototype.scrobbleAllClients = function(track, usernames){
+
+    usernames.forEach( (username)=>{
+        this.sendRequest(callbacks.basicLogCallback, 'scrobbleTrack', username, track);
+    })
 };
 
 module.exports = APICommunicator;
