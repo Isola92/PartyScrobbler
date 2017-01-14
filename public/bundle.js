@@ -126,7 +126,7 @@
 	
 	var localhost = 'http://localhost:5000/';
 	var officialhost = 'https://partyscrobbler.herokuapp.com/';
-	var socket = (0, _socket2.default)(localhost, { 'force new connection': true });
+	var socket = (0, _socket2.default)(officialhost, { 'force new connection': true });
 	
 	/**
 	 * Listens to a socket connection.
