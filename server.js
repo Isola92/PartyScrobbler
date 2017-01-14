@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, './public')));
 let clients  = []
 let local    = 'http://localhost:5000';
 let official = "https://partyscrobbler.herokuapp.com/";
-let address  = local;
+let address  = official;
 let partyScrobbler;
 let apiCommunicator;
 let PORT     = process.env.PORT || 5000;
