@@ -1,10 +1,13 @@
-body {
-    background: url("../images/Blurredbackground_Invincible/04_blurred_background_Invincible.jpg") no-repeat center center fixed;
+html{
+    background: url("../images/Blurredbackground_Invincible/background.jpg") no-repeat center center fixed;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
     background-size: cover;
     height: 100%;
+}
+
+body {
     color: white;
     font-family: Verdana;
     font-size: 1.2em;
@@ -13,6 +16,22 @@ body {
 #wrapper {
     width: 70%;
     margin: 0 auto;
+}
+
+h1 {
+    animation-duration: 3s;
+    animation-name: slideinleft;
+    margin: 0;
+}
+
+@keyframes slideinleft {
+    from {
+        margin-left: -100%;
+    }
+
+    to {
+        margin-left: 0%;
+    }
 }
 
 input{
@@ -64,7 +83,7 @@ h1, h2, p, li, button, span {
 
 
 @media (max-width: 700px) {
-    #wrapper, .input {
+    #wrapper, input, button {
         width: 100%;
     }
 

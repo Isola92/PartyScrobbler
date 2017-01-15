@@ -13,7 +13,9 @@ app.use(express.static(path.join(__dirname, './public')));
 
 /**
  * Methods related to dealing with requests from the client.
- * Requests from the client comes in two forms: 1. Regular http-requests (urls) 2. Data from a socket connection between the client and the server.
+ * Requests from the client comes in two forms:
+ * 1. Regular http-requests (urls).
+ * 2. Data from a socket connection between the client and the server.
  **/
 
 let clients  = []
@@ -114,9 +116,12 @@ const sendTrackInfoToClients = function(hostName){
 
     //Notify all clients, including the host, about most recent track.
     host.listeners.concat(host).forEach((listener) =>{
-        clients[listener.socketid].emit('recenttrack', {
-            track: host.tracks[0],
-            party: hostnames
-        });
+
+        if(host.tracks[0]){
+            clients[listener.socketid].emit('recenttrack', {
+                track: host.tracks[0],
+                party: hostnames
+            });
+        }
     })
 };
