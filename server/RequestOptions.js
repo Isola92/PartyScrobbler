@@ -19,7 +19,7 @@ RequestOptions.prototype.getRecentTrackOptions = function(host){
     return {
         host: 'ws.audioscrobbler.com',
         port: 80,
-        path: '/2.0/?method=user.getrecenttracks&user=' + host + '&api_key=' + this.key + '&format=json&limit=1'
+        path: '/2.0/?method=user.getrecenttracks&user=' + host + '&api_key=' + this.key + '&format=json&limit=20'
     };
 };
 

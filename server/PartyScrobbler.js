@@ -1,9 +1,9 @@
 /**
  * This class is responsible for dealing with users and trackdata.
  */
-function PartyScrobbler(newTrackNotification){
+function PartyScrobbler(apiCommunicator){
     this.tracks               = [];
-    this.newTrackNotification = newTrackNotification;
+    this.apiCommunicator      = apiCommunicator;
     this.hosts                = {};
 }
 
@@ -12,21 +12,34 @@ function PartyScrobbler(newTrackNotification){
  * @param nextTrack
  * @returns {boolean}
  */
-PartyScrobbler.prototype.compareTrack = function(nextTrack, hostname){
-    return this.hosts[hostname].lastscrobbledtrack.name !== nextTrack.name || this.hosts[hostname].lastscrobbledtrack.artist !== nextTrack.artist;
+PartyScrobbler.prototype.shouldWeAddTrack = function(recenttracks, hostname){
+
+    let currentTracks = this.hosts[hostname].tracks;
+
+    let derp =  recenttracks.every( (track, index) => {
+        return currentTracks[index].name === track.name && currentTracks[index].artist === track.artist;
+    })
+
+    return !derp;
 };
 
 PartyScrobbler.prototype.addItem = function(trackdata, hostname){
 
-    let track = this.parseTrack(JSON.parse(trackdata))
+    let tracks = this.parseTrack(JSON.parse(trackdata));
 
-    if(this.compareTrack(track, hostname)){
-        this.hosts[hostname].tracks.push(track);
-        this.hosts[hostname].lastscrobbledtrack = track;
-        this.newTrackNotification(track);
+    if(this.hosts[hostname].tracks.length === 0){
+        this.hosts[hostname].tracks = tracks;
+        console.log("Added the " + tracks.length + " latest tracks to the host for comparison. None of them were scrobbled.");
+        return;
     }
 
-    console.log("Most recently scrobbled track:", track);
+    if(this.shouldWeAddTrack(tracks, hostname)){
+        this.hosts[hostname].tracks.unshift(tracks[0]);
+        this.hosts[hostname].lastscrobbledtrack = tracks[0];
+        this.scrobbleAllClients(tracks[0], this.hosts[hostname]);
+    }
+
+    console.log("Most recently scrobbled track:", tracks[0]);
 };
 
 /**
@@ -38,12 +51,22 @@ PartyScrobbler.prototype.parseTrack = function(trackdata){
 
     let track = trackdata.recenttracks.track[0];
 
+    /*
     return {
         artist: track.artist['#text'],
         name:   track.name,
         album:  track.album['#text'],
         image:  track.image[3]["#text"]
     };
+*/
+    return trackdata.recenttracks.track.map( (track) => {
+        return {
+            artist: track.artist['#text'],
+            name:   track.name,
+            album:  track.album['#text'],
+            image:  track.image[3]["#text"]
+        };
+    });
 };
 
 PartyScrobbler.prototype.addHost = function(hostName, socketId){
@@ -58,11 +81,10 @@ PartyScrobbler.prototype.addHost = function(hostName, socketId){
             listeners:          []
         };
         console.log("Successfully added a new host");
-        return;
     }else{
         this.hosts[hostName].socketid = socketId;
+        console.log("Host already exists");
     }
-    console.log("Host already exists");
 };
 
 /**
@@ -73,7 +95,7 @@ PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
 
     if(this.hosts[hostName]){
 
-        this.hosts[hostName].listeners = this.hosts[hostName].listeners.filter( (listener) => {
+        this.hosts[hostName].listeners = this.hosts[hostName].listeners.filter((listener) =>{
             return listener.username !== userName;
         });
 
@@ -86,13 +108,10 @@ PartyScrobbler.prototype.addListener = function(userName, hostName, socketId){
     }
 };
 
-/**
- * Adds users and hosts together and returns one based on it's client-id.
- */
-PartyScrobbler.prototype.getUserFromClientId = function(socketId){
+PartyScrobbler.prototype.mergeHostsAndUsers = function(host){
     let users = [];
 
-    Object.keys(this.hosts).forEach( (key) => {
+    Object.keys(this.hosts).forEach((key) =>{
         let host = this.hosts[key];
 
         if(host.listeners){
@@ -102,9 +121,51 @@ PartyScrobbler.prototype.getUserFromClientId = function(socketId){
         users = users.concat(host);
     });
 
-    return users.find((user) =>{
-        return user.socketid === socketId
+    return users;
+};
+
+/**
+ * Adds users and hosts together and returns one based on it's client-id.
+ */
+PartyScrobbler.prototype.getUserFromClientId = function(socketId){
+
+    return this.mergeHostsAndUsers().find((user) =>{
+        return user.socketid === socketId;
     })
-}
+};
+
+PartyScrobbler.prototype.removeUser = function(socketId){
+
+    let keys = Object.keys(this.hosts);
+
+    for(let i = 0; i < keys.length; i++){
+
+        if(this.hosts[keys[i]].socketid === socketId){
+            delete this.hosts[keys[i]];
+        }else if(this.hosts[keys[i]].listeners){
+            for(let j = 0; j < this.hosts[keys[i]].listeners.length; j++){
+                if(this.hosts[keys[i]].listeners[j].socketid === socketId){
+                    this.hosts[keys[i]].listeners.splice(j, 1);
+                }
+            }
+        }
+    }
+};
+
+/**
+ * Iterate over the clients and initiate one scrobble POST request for each.
+ * Should change this method to take in a hostname as well. Then scrobble each
+ * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
+ */
+PartyScrobbler.prototype.scrobbleAllClients = function(track, host){
+
+    if(host.listeners){
+        let usernames = host.listeners.map( (listener) => listener.username );
+        this.apiCommunicator.scrobbleAllClients(track, usernames)
+    }else{
+        console.log("Canceled initiating of new scrobble, no listeners in party.");
+    }
+
+};
 
 module.exports = PartyScrobbler;
