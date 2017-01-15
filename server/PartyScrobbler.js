@@ -12,21 +12,34 @@ function PartyScrobbler(apiCommunicator){
  * @param nextTrack
  * @returns {boolean}
  */
-PartyScrobbler.prototype.compareTrack = function(nextTrack, hostname){
-    return this.hosts[hostname].lastscrobbledtrack.name !== nextTrack.name || this.hosts[hostname].lastscrobbledtrack.artist !== nextTrack.artist;
+PartyScrobbler.prototype.shouldWeAddTrack = function(recenttracks, hostname){
+
+    let currentTracks = this.hosts[hostname].tracks;
+
+    let derp =  recenttracks.every( (track, index) => {
+        return currentTracks[index].name === track.name && currentTracks[index].artist === track.artist;
+    })
+
+    return !derp;
 };
 
 PartyScrobbler.prototype.addItem = function(trackdata, hostname){
 
-    let track = this.parseTrack(JSON.parse(trackdata))
+    let tracks = this.parseTrack(JSON.parse(trackdata));
 
-    if(this.compareTrack(track, hostname)){
-        this.hosts[hostname].tracks.push(track);
-        this.hosts[hostname].lastscrobbledtrack = track;
-        this.scrobbleAllClients(track, this.hosts[hostname]);
+    if(this.hosts[hostname].tracks.length === 0){
+        this.hosts[hostname].tracks = tracks;
+        console.log("Added the " + tracks.length + " latest tracks to the host for comparison. None of them were scrobbled.");
+        return;
     }
 
-    console.log("Most recently scrobbled track:", track);
+    if(this.shouldWeAddTrack(tracks, hostname)){
+        this.hosts[hostname].tracks.unshift(tracks[0]);
+        this.hosts[hostname].lastscrobbledtrack = tracks[0];
+        this.scrobbleAllClients(tracks[0], this.hosts[hostname]);
+    }
+
+    console.log("Most recently scrobbled track:", tracks[0]);
 };
 
 /**
@@ -38,12 +51,22 @@ PartyScrobbler.prototype.parseTrack = function(trackdata){
 
     let track = trackdata.recenttracks.track[0];
 
+    /*
     return {
         artist: track.artist['#text'],
         name:   track.name,
         album:  track.album['#text'],
         image:  track.image[3]["#text"]
     };
+*/
+    return trackdata.recenttracks.track.map( (track) => {
+        return {
+            artist: track.artist['#text'],
+            name:   track.name,
+            album:  track.album['#text'],
+            image:  track.image[3]["#text"]
+        };
+    });
 };
 
 PartyScrobbler.prototype.addHost = function(hostName, socketId){

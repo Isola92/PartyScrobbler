@@ -106,12 +106,6 @@ APICommunicator.prototype.addToken = function(user, token){
     this.tokens[user] = token;
 }
 
-
-/**
- * Iterate over the clients and initiate one scrobble POST request for each.
- * Should change this method to take in a hostname as well. Then scrobble each
- * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
- */
 APICommunicator.prototype.scrobbleAllClients = function(track, usernames){
 
     usernames.forEach( (username)=>{

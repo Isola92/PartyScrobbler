@@ -115,7 +115,7 @@ const sendTrackInfoToClients = function(hostName){
     //Notify all clients, including the host, about most recent track.
     host.listeners.concat(host).forEach((listener) =>{
         clients[listener.socketid].emit('recenttrack', {
-            track: host.lastscrobbledtrack,
+            track: host.tracks[0],
             party: hostnames
         });
     })

@@ -71,7 +71,7 @@ describe('PartyScrobbler', () => {
             usernames.forEach( (username, index) => {
                 assert.equal(partyScrobbler.getUserFromClientId(index).username, username)
             })
-        })
+        });
 
         it('removeusers', () => {
             let partyScrobbler = new PartyScrobbler();
@@ -82,6 +82,29 @@ describe('PartyScrobbler', () => {
             partyScrobbler.removeUser(10);
             assert.equal(partyScrobbler.getUserFromClientId(10), undefined);
         })
+    });
+
+    describe('same track twice', () => {
+
+        it('should not pass same scrobble multiple times', () => {
+            let partyScrobbler = new PartyScrobbler();
+            const hostname = 'HugePackage';
+            let track = {artist: 'Ulver', track: 'Bergtatt ind i fjellkamre, ', album: 'Bergtatt'};
+            let tracks = [{artist: 'Bob Dylan', track:"Lay Lady Lay "}, track];
+
+            partyScrobbler.addHost(hostname, 1);
+            Object.assign(partyScrobbler.hosts[hostname].tracks, tracks);
+            assert.equal(partyScrobbler.shouldWeAddTrack(tracks,  hostname), false);
+            partyScrobbler.hosts[hostname].tracks.push(track);
+            assert.equal(partyScrobbler.shouldWeAddTrack([track],  hostname), true);
+            tracks.push({artist: 'Ulf Lundell', track:"Den vassa eggen", album: "Den vassa eggen"});
+            assert.equal(partyScrobbler.shouldWeAddTrack(tracks, hostname), true);
+        })
+
+        //This is a problem though. Because a listener might play the same track multiple times in a row.
+        //How do we solve this? We keep an array of scrobbles instead of just the most recent one.
+        //We compare the array returned by the last.fm call with the local array.
+        //If there is a new scrobble they should not match.
     })
 });
 
