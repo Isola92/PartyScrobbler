@@ -78,7 +78,8 @@ ul li {
 
 
 h1, h2, p, li, button, span {
-    font-variant-caps: small-caps;
+    /*font-variant-caps: small-caps;*/
+    text-transform: uppercase;
 }
 
 
