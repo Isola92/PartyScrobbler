@@ -19,12 +19,8 @@ function APICommunicator(host){
 /**
  * Initiates different http-requests depending on the type of method.
  * Fires callbacks to server.js which sends respons to the client.
- * TODO: CHANGE THIS METHOD TO USE THE PARAMS ARRAY INSTEAD
- * TODO: BREAK OUT REQUESTS FROM THIS CLASS
  */
 APICommunicator.prototype.sendRequest = function(callback, method, username, track, host){
-
-    console.log("Initiating request:", method);
 
     switch(method){
 

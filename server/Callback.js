@@ -4,7 +4,8 @@
  * FUNCTION TO CALL WITH PREVIOUSLY MENTIONED DATA,
  * RESPONSE OBJECT FROM A REQUEST
  */
-module.exports = callbacks = {
+module.exports = 
+{
 
     callback: function()  {
         let body = '';
@@ -24,8 +25,8 @@ module.exports = callbacks = {
         });
 
         //In the end we pass the received data and any additional parameters to the function.
-        response.on('end', () =>{
-            console.log("Callback response: " + response);
+        response.on('end', () =>
+        {
             passData.apply(this,[body, ...args]);
         });
     },
@@ -38,7 +39,7 @@ module.exports = callbacks = {
         });
 
         response.on('end', () =>{
-            console.log("Received data: " + response);
+           // console.log("Received data: " + (response));
         });
     }
 }

@@ -80,7 +80,7 @@
 	        _ServerCommunicator.ServerCaller.authenticateUser(getParameterByName('username'), getParameterByName('token'), getParameterByName('host'));
 	    } else {
 	
-	        //Instead of initiating different components directly I would fire various events to a controller which initiates various views.
+	        //Instead of initiating different components directly I could fire various events to a controller which initiates various views.
 	        components.hostSection();
 	        components.joinSection();
 	    }
@@ -126,7 +126,7 @@
 	
 	var localhost = 'http://localhost:5000/';
 	var officialhost = 'https://partyscrobbler.herokuapp.com/';
-	var socket = (0, _socket2.default)(officialhost, { 'force new connection': true });
+	var socket = (0, _socket2.default)(localhost, { 'force new connection': true });
 	
 	/**
 	 * Listens to a socket connection.

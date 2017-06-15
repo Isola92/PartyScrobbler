@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 
 let localhost =  'http://localhost:5000/';
 let officialhost = 'https://partyscrobbler.herokuapp.com/';
-let socket = io(officialhost, {'force new connection': true});
+let socket = io(localhost, {'force new connection': true});
 
 /**
  * Listens to a socket connection.

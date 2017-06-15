@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () =>{
         ServerCaller.authenticateUser(getParameterByName('username'), getParameterByName('token'), getParameterByName('host'));
     }else{
 
-        //Instead of initiating different components directly I would fire various events to a controller which initiates various views.
+        //Instead of initiating different components directly I could fire various events to a controller which initiates various views.
         components.hostSection();
         components.joinSection();
     }

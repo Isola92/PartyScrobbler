@@ -1,3 +1,5 @@
+
+
 /**
  * This class is responsible for dealing with users and trackdata.
  */
@@ -8,19 +10,48 @@ function PartyScrobbler(apiCommunicator){
 }
 
 /**
- * Return true if the track is not scrobbled yet.
- * @param nextTrack
- * @returns {boolean}
+ * Compares scrobble data directly from the last.fm API with the state stored on the server.
+ *
+ * Todo: what about deleted tracks?
+ * @param latestLastFMTracks The 20 most recent tracks scrobbled by the host (from last.fm)
+ * @returns {boolean} true if the track is not scrobbled yet.
  */
-PartyScrobbler.prototype.shouldWeAddTrack = function(recenttracks, hostname){
+PartyScrobbler.prototype.isNewTrack = function(latestLastFMTracks, localTracks)
+{
 
-    let currentTracks = this.hosts[hostname].tracks;
+    const string1 = JSON.stringify(latestLastFMTracks[0]);
+    const string2 = JSON.stringify(localTracks[0]);
 
-    let derp =  recenttracks.every( (track, index) => {
-        return currentTracks[index].name === track.name && currentTracks[index].artist === track.artist;
-    })
+    return string1 !== string2;
+    //return JSON.stringify(latestLastFMTracks[0]) ===  JSON.stringify(localTracks[0]);
 
-    return !derp;
+    //let currentTracks = this.hosts[hostname].tracks;
+    
+    // If the lengths varies we don't want to do anything here.
+    
+    /*
+    if(localTracks.length !== recenttracks.length)
+    {
+        return false;
+    }
+    else
+    {
+        /* 
+        Wait with this solution. It's not stable:
+        Do I make the correct request to last.fm (including both album, artist and track)?
+        If the user decides to delete a track everything turns to shit.
+        return !recenttracks.every( (track, index) => {
+            return localTracks[index].name === track.name && localTracks[index].artist === track.artist;
+        })
+        
+        const mostRecentLocalTrack = localTracks[0];
+        const mostRecentLastFMTrack = latestLastFMTracks[0]; 
+        return Object.is(mostRecentLocalTrack, mostRecentLastFMTrack);
+        //return mostRecentLocalTrack.name === mostRecentLocalTrack.name && localTracks[0].artist === track.artist;
+
+    }
+    */
+    
 };
 
 PartyScrobbler.prototype.addItem = function(trackdata, hostname){
@@ -33,13 +64,15 @@ PartyScrobbler.prototype.addItem = function(trackdata, hostname){
         return;
     }
 
-    if(this.shouldWeAddTrack(tracks, hostname)){
+    if(this.isNewTrack(tracks, this.hosts[hostname].tracks)){
         this.hosts[hostname].tracks.unshift(tracks[0]);
         this.hosts[hostname].lastscrobbledtrack = tracks[0];
         this.scrobbleAllClients(tracks[0], this.hosts[hostname]);
+        this.hosts[hostname].tracks.pop();
+        // Need to remove the last element as well here.
     }
 
-    console.log("Most recently scrobbled track:", tracks[0]);
+    console.log("Most recently scrobbled track:", tracks[0].name);
 };
 
 /**
@@ -80,7 +113,7 @@ PartyScrobbler.prototype.addHost = function(hostName, socketId){
             tracks:             [],
             listeners:          []
         };
-        console.log("Successfully added a new host");
+        console.log("Successfully added a new host:", hostName);
     }else{
         this.hosts[hostName].socketid = socketId;
         console.log("Host already exists");

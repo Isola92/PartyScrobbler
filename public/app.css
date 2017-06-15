@@ -1,5 +1,7 @@
 html{
-    background: url("../images/Blurredbackground_Invincible/background.jpg") no-repeat center center fixed;
+   /* background: url("../images/Blurredbackground_Invincible/background.jpg") no-repeat center center fixed;
+    */
+  background: linear-gradient(to right, #000000, #434343); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
