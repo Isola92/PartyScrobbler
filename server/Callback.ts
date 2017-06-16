@@ -1,38 +1,43 @@
-"use strict";
-exports.__esModule = true;
 /**
  * CALLBACKS EXPECTS ARGUMENTS IN THE FORM OF:
  * DATA,
  * FUNCTION TO CALL WITH PREVIOUSLY MENTIONED DATA,
  * RESPONSE OBJECT FROM A REQUEST
  */
-function callback() {
-    var _this = this;
-    var body = '';
+export function callback()  
+{
+    let body = '';
+
     //Convert arguments to an actual array.
     //let args = [...arguments];
-    var args = Array.prototype.slice.call(arguments);
+    let args = Array.prototype.slice.call(arguments);
     //The last argument is always the "response" object from any request (currently Http).
-    var response = args.pop();
+    let response = args.pop();
+
     //The last argument after that is the function that actually wants the data.
-    var passData = args.pop();
+    let passData = args.pop();
+
     //The data from our requests might be returned in chunks. We add these together.
-    response.on('data', function (chunk) {
+    response.on('data', (chunk) =>{
         body += chunk;
     });
+
     //In the end we pass the received data and any additional parameters to the function.
-    response.on('end', function () {
-        passData.apply(_this, [body].concat(args));
+    response.on('end', () =>
+    {
+        passData.apply(this,[body, ...args]);
     });
 }
-exports.callback = callback;
-function basicLogCallback(response) {
-    var body = '';
-    response.on('data', function (chunk) {
+
+export function basicLogCallback(response) 
+{
+    let body = '';
+
+    response.on('data', (chunk) =>{
         body += chunk;
     });
-    response.on('end', function () {
+
+    response.on('end', () =>{
         // console.log("Received data: " + (response));
     });
 }
-exports.basicLogCallback = basicLogCallback;
