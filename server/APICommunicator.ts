@@ -1,7 +1,6 @@
 import {getSessionSignature, getScrobbleSignature} from "./RequestSignatures";
 import {RequestOptions} from "./RequestOptions";
 import {basicLogCallback} from "./Callback";
-
 let http   = require('http');
 let moment = require('moment');
 let xml2js = require('xml2js');

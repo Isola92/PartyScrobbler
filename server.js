@@ -6,10 +6,7 @@ var Callback_1 = require("./server/Callback");
 var url = require("url");
 var express = require("express");
 var path = require("path");
-// External
-//let express         = require('express');             
-//let xml2js          = require('xml2js');
-//let path            = require('path');
+var io = require("socket.io");
 /**
  * Methods related to dealing with requests from the client.
  * Requests from the client comes in two forms:
@@ -35,7 +32,7 @@ var Server = (function () {
         this.app = express();
         this.app.use(express.static(path.join(__dirname, './public')));
         var server = require('http').createServer(this.app);
-        this.io = require('socket.io')(server);
+        this.io = io(server);
         server.listen(this.PORT, function () { return console.log('Server listening on:', _this.adress); });
         this.declareRoutes();
         this.checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.

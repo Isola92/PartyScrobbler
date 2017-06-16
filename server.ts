@@ -6,11 +6,7 @@ import * as express from "express";
 import * as http from "http";
 import * as xml2js from "xml2js";
 import * as path from "path";
-// External
-//let express         = require('express');             
-
-//let xml2js          = require('xml2js');
-//let path            = require('path');
+import * as io from "socket.io";
 
 /**
  * Methods related to dealing with requests from the client.
@@ -27,8 +23,8 @@ class Server
     private partyScrobbler: PartyScrobbler;
     private apiCommunicator;
     private PORT     = process.env.PORT || 5000;
-    private app: any;
-    private io: any;
+    private app: express.Server;
+    private io: io;
 
     constructor()
     {
@@ -46,7 +42,7 @@ class Server
         this.app = express();
         this.app.use(express.static(path.join(__dirname, './public')));
         const server = require('http').createServer(this.app);
-        this.io = require('socket.io')(server);
+        this.io = io(server);
         server.listen(this.PORT, () => console.log('Server listening on:', this.adress));
         this.declareRoutes();
         this.checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.
