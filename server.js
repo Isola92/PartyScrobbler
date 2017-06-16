@@ -1,29 +1,15 @@
-/* declare to avoid typescript warnings. */
-//declare function require(name:string);
-//declare const __dirname;
-//declare const process;
+"use strict";
+exports.__esModule = true;
+var PartyScrobbler_1 = require("./server/PartyScrobbler");
+var APICommunicator_1 = require("./server/APICommunicator");
+var Callback_1 = require("./server/Callback");
+var url = require("url");
+var express = require("express");
+var path = require("path");
 // External
-var express = require('express');
-var app = express();
-var server = require('http').createServer(app);
-var io = require('socket.io')(server);
-var xml2js = require('xml2js');
-var path = require('path');
-var url = require('url');
-// Internal
-var APICommunicator = require('./server/APICommunicator');
-var PartyScrobbler = require('./server/PartyScrobbler');
-var callbacks = require('./server/Callback');
-// Routes
-var AUTHENTICATE = "/authenticate";
-var HOME = "/";
-// Socket 
-var RECENTTRACK = "recenttrack";
-var USER = "user";
-var HOST = "host";
-var DISCONNECT = "disconnect";
-var PARTY = "party";
-app.use(express.static(path.join(__dirname, './public')));
+//let express         = require('express');             
+//let xml2js          = require('xml2js');
+//let path            = require('path');
 /**
  * Methods related to dealing with requests from the client.
  * Requests from the client comes in two forms:
@@ -38,15 +24,18 @@ var Server = (function () {
         this.official = "https://partyscrobbler.herokuapp.com/";
         this.adress = this.local;
         this.PORT = process.env.PORT || 5000;
-        this.apiCommunicator = new APICommunicator();
-        this.partyScrobbler = new PartyScrobbler(this.apiCommunicator);
-        //Shamelessly stolen from: http://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
+        this.apiCommunicator = new APICommunicator_1.APICommunicator();
+        this.partyScrobbler = new PartyScrobbler_1.PartyScrobbler(this.apiCommunicator);
         require('dns').lookup(require('os').hostname(), function (err, ip) {
             _this.initiateServer();
         });
     }
     Server.prototype.initiateServer = function () {
         var _this = this;
+        this.app = express();
+        this.app.use(express.static(path.join(__dirname, './public')));
+        var server = require('http').createServer(this.app);
+        this.io = require('socket.io')(server);
         server.listen(this.PORT, function () { return console.log('Server listening on:', _this.adress); });
         this.declareRoutes();
         this.checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.
@@ -57,13 +46,13 @@ var Server = (function () {
         /**
          * Client requesting the start-page.
          */
-        app.get('/', function (req, res) {
+        this.app.get('/', function (req, res) {
             res.sendFile(__dirname + '/index.html');
         });
         /**
          * Client requesting authentication.
          */
-        app.get('/authenticate', function (req, res) {
+        this.app.get('/authenticate', function (req, res) {
             var queryData = url.parse(req.url, true).query;
             res.redirect('https://www.last.fm/api/auth/?api_key=a05b8d216b62ceec197a37a8b9f11f20&cb=' + _this.adress + '?username=' + queryData.username + "%26host=" + queryData.host);
         });
@@ -74,7 +63,7 @@ var Server = (function () {
          * Server listening on a socket.
          * Currently only used to pass last.fm data to the client.
          */
-        io.on('connection', function (socket) {
+        this.io.on('connection', function (socket) {
             _this.clients[socket.id] = socket;
             socket.on('recenttrack', function (data) {
                 socket.emit('recenttrack', _this.partyScrobbler.lastScrobbledTrack);
@@ -82,8 +71,8 @@ var Server = (function () {
             // data = {username, token}
             socket.on('user', function (data) {
                 _this.apiCommunicator.addToken(data.user, data.token);
-                var callback = callbacks.callback.bind(_this.apiCommunicator, _this.apiCommunicator.addItem);
-                _this.apiCommunicator.sendRequest(callback, 'getSession', data.user);
+                var callbackz = Callback_1.callback.bind(_this.apiCommunicator, _this.apiCommunicator.addItem);
+                _this.apiCommunicator.sendRequest(callbackz, 'getSession', data.user);
                 _this.partyScrobbler.addListener(data.user, data.host, socket.id);
             });
             socket.on('host', function (hostname) {
@@ -99,18 +88,15 @@ var Server = (function () {
             });
         });
     };
-    
     /**
      * Fetches each hosts most recently scrobbled track.
-     *
      */
     Server.prototype.checkRecentTrack = function () {
         var _this = this;
         var mainLoopIntervalTime = 15000;
         var sendRecentTrack = setInterval(function () {
             Object.keys(_this.partyScrobbler.hosts).forEach(function (hostname) {
-                var callbackz = callbacks.callback;
-                var recentTrackCallback = callbackz.bind(_this.partyScrobbler, hostname, _this.partyScrobbler.addItem);
+                var recentTrackCallback = Callback_1.callback.bind(_this.partyScrobbler, hostname, _this.partyScrobbler.addItem);
                 _this.apiCommunicator.sendRequest(recentTrackCallback, 'getRecentTracks', null, null, hostname);
                 _this.sendTrackInfoToClients(hostname);
             });

@@ -1,38 +1,16 @@
-/* declare to avoid typescript warnings. */
-//declare function require(name:string);
-//declare const __dirname;
-//declare const process;
-
-
+import {PartyScrobbler} from "./server/PartyScrobbler";
+import {APICommunicator} from "./server/APICommunicator";
+import {callback, basicLogCallback} from "./server/Callback";
+import * as url from "url";
+import * as express from "express";
+import * as http from "http";
+import * as xml2js from "xml2js";
+import * as path from "path";
 // External
-let express         = require('express');
-let app             = express();
-let server          = require('http').createServer(app);
-let io              = require('socket.io')(server);
-let xml2js          = require('xml2js');
-let path            = require('path');
-let url             = require('url');
+//let express         = require('express');             
 
-// Internal
-let APICommunicator = require('./server/APICommunicator');
-let PartyScrobbler  = require('./server/PartyScrobbler');
-let callbacks       = require('./server/Callback');
-
-// Routes
-const AUTHENTICATE = "/authenticate";
-const HOME  = "/";
-
-// Socket 
-const RECENTTRACK = "recenttrack";
-const USER = "user";
-const HOST = "host";
-const DISCONNECT = "disconnect";
-const PARTY = "party";
-
-
-
-app.use(express.static(path.join(__dirname, './public')));
-
+//let xml2js          = require('xml2js');
+//let path            = require('path');
 
 /**
  * Methods related to dealing with requests from the client.
@@ -46,16 +24,17 @@ class Server
     private local: string    = 'http://localhost:5000';
     private official: string = "https://partyscrobbler.herokuapp.com/";
     private adress: string  = this.local;
-    private partyScrobbler;
+    private partyScrobbler: PartyScrobbler;
     private apiCommunicator;
     private PORT     = process.env.PORT || 5000;
+    private app: any;
+    private io: any;
 
     constructor()
     {
         this.apiCommunicator = new APICommunicator();
         this.partyScrobbler  = new PartyScrobbler(this.apiCommunicator);
 
-        //Shamelessly stolen from: http://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
         require('dns').lookup(require('os').hostname(), (err, ip) =>
         {
             this.initiateServer();
@@ -64,6 +43,10 @@ class Server
     
     private initiateServer(): void
     {
+        this.app = express();
+        this.app.use(express.static(path.join(__dirname, './public')));
+        const server = require('http').createServer(this.app);
+        this.io = require('socket.io')(server);
         server.listen(this.PORT, () => console.log('Server listening on:', this.adress));
         this.declareRoutes();
         this.checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.
@@ -75,7 +58,7 @@ class Server
         /**
          * Client requesting the start-page.
          */
-        app.get('/', (req, res) =>
+        this.app.get('/', (req, res) =>
         {
             res.sendFile(__dirname + '/index.html');
         });
@@ -83,7 +66,7 @@ class Server
         /**
          * Client requesting authentication.
          */
-        app.get('/authenticate', (req, res) =>
+        this.app.get('/authenticate', (req, res) =>
         {
             let queryData = url.parse(req.url, true).query;
             res.redirect('https://www.last.fm/api/auth/?api_key=a05b8d216b62ceec197a37a8b9f11f20&cb=' + this.adress + '?username=' + queryData.username + "%26host=" + queryData.host);
@@ -97,7 +80,7 @@ class Server
          * Server listening on a socket.
          * Currently only used to pass last.fm data to the client.
          */
-        io.on('connection', (socket) =>
+        this.io.on('connection', (socket) =>
         {
             this.clients[socket.id] = socket;
 
@@ -110,8 +93,8 @@ class Server
             socket.on('user', (data) =>
             {
                 this.apiCommunicator.addToken(data.user, data.token);
-                let callback = callbacks.callback.bind(this.apiCommunicator, this.apiCommunicator.addItem);
-                this.apiCommunicator.sendRequest(callback, 'getSession', data.user);
+                let callbackz = callback.bind(this.apiCommunicator, this.apiCommunicator.addItem);
+                this.apiCommunicator.sendRequest(callbackz, 'getSession', data.user);
                 this.partyScrobbler.addListener(data.user, data.host, socket.id);
             });
 
@@ -136,7 +119,6 @@ class Server
 
     /**
      * Fetches each hosts most recently scrobbled track.
-     * 
      */
     private checkRecentTrack()
     {
@@ -146,8 +128,7 @@ class Server
         {
             Object.keys(this.partyScrobbler.hosts).forEach((hostname) =>
             {
-                let callbackz = callbacks.callback;
-                let recentTrackCallback = callbackz.bind(this.partyScrobbler, hostname, this.partyScrobbler.addItem);
+                let recentTrackCallback = callback.bind(this.partyScrobbler, hostname, this.partyScrobbler.addItem);
                 this.apiCommunicator.sendRequest(recentTrackCallback, 'getRecentTracks', null, null, hostname);
                 this.sendTrackInfoToClients(hostname);
             });
