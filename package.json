@@ -5,21 +5,19 @@
   "scripts": {
     "test": "mocha",
     "watch": "./node_modules/.bin/webpack -d --watch",
-    "start": "node server.js"
+    "start": "node server.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630" 
   },
   "author": "Olof Lindell",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^7.0.31",
-    "babel-core": "^6.18.2",
-    "babel-loader": "^6.2.7",
-    "babel-preset-es2015": "^6.14.0",
+    "@types/socket.io": "^1.4.29",
+    "@types/socket.io-client": "^1.4.29",
     "express": "^4.14.0",
     "mocha": "^3.2.0",
     "moment": "*",
     "socket.io": "*",
     "socket.io-client": "*",
-    "webpack": "*",
     "xml2js": "*"
   }
 }

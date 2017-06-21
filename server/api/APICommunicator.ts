@@ -1,15 +1,12 @@
-import {getSessionSignature, getScrobbleSignature} from "./RequestSignatures";
+import {RequestSignatures} from "./RequestSignatures";
 import {RequestOptions} from "./RequestOptions";
-import {basicLogCallback} from "./Callback";
+import {basicLogCallback} from "../util/Callback";
 let http   = require('http');
 let moment = require('moment');
 let xml2js = require('xml2js');
 
-//let signatures = require('./RequestSignatures.js');
-//let RequestOptions = require('./RequestOptions.js');
-
 let XMLParser  = new xml2js.Parser();
-let callbacks = require('./Callback');
+//let callbacks = require('./Callback');
 
 export class APICommunicator
 {
@@ -19,15 +16,16 @@ export class APICommunicator
     public sessionTokens: any[];
     public token: any[];
     public requestOptions: RequestOptions;
+    public requestSignatures: RequestSignatures;
 
-    constructor()
+    constructor(key: string, secret: string)
     {
-        this.key = 'a05b8d216b62ceec197a37a8b9f11f20';
+        this.key = key;
         this.hosts = [];
         this.tokens = [];
         this.sessionTokens = [];
-        this.token = [];
-        this.requestOptions = new RequestOptions(this.key);
+        this.requestOptions = new RequestOptions(key);
+        this.requestSignatures = new RequestSignatures(key, secret);
     }
 
 
@@ -73,7 +71,7 @@ export class APICommunicator
     public makeSessionRequest(method, user, callback)
     {
         let token = this.getToken(user);
-        let signature = getSessionSignature(method, token);
+        let signature = this.requestSignatures.getSessionSignature(method, token);
         http.request(this.requestOptions.getSessionOptions(signature, token), callback).end();
     };
 
@@ -92,26 +90,27 @@ export class APICommunicator
             track:      track.name
         };
 
-        return 'api_key=' + this.getkey() + '&api_sig=' + getScrobbleSignature(config) + '&artist=' + encodedartistname + '&method=track.scrobble' + '&sk=' + this.getSessionKey(user) + '&timestamp=' + time + '&track=' + encodedtrackname;
+        return 'api_key=' + this.getkey() + '&api_sig=' + this.requestSignatures.getScrobbleSignature(config) + '&artist=' + encodedartistname + '&method=track.scrobble' + '&sk=' + this.getSessionKey(user) + '&timestamp=' + time + '&track=' + encodedtrackname;
     };
 
-    public getkey()
+    public getkey(): string
     {
         return this.key;
     };
 
-    public getSessionKey(username)
+    public getSessionKey(username): string
     {
         return this.sessionTokens[username];
     };
 
-    public getToken(username)
+    public getToken(username): string
     {
         if(this.tokens[username] !== undefined){
             return this.tokens[username];
         }
 
-        return this.token;
+        return null;
+        //return this.token;
     };
 
     public addItem(body)

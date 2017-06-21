@@ -1,3 +1,12 @@
+export interface RequestOption
+{
+    host: string;
+    port: number;
+    path: string;
+    headers ? : object;
+    method ? : string;
+}
+
 /**
  * Methods responsible for returning the option object you pass to a node httprequest.
  */
@@ -10,11 +19,8 @@ export class RequestOptions
         this.key = key;
     }
 
-
-
-    public getSessionOptions(signature, token)
+    public getSessionOptions(signature, token): RequestOption
     {
-
         return {
             host: 'ws.audioscrobbler.com',
             port: 80,
@@ -22,7 +28,7 @@ export class RequestOptions
         };
     };
 
-    public getRecentTrackOptions(host)
+    public getRecentTrackOptions(host): RequestOption
     {
         return {
             host: 'ws.audioscrobbler.com',
@@ -31,15 +37,15 @@ export class RequestOptions
         };
     };
 
-    public getScrobbleTrackOptions()
+    public getScrobbleTrackOptions(): RequestOption
     {
-
         return {
-            host:    'ws.audioscrobbler.com',
-            port:    80,
-            method:  'POST',
-            path:    '/2.0/',
-            headers: {
+            host: 'ws.audioscrobbler.com',
+            port: 80,
+            method: 'POST',
+            path: '/2.0/',
+            headers:
+            {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
             }
         }

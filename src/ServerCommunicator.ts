@@ -1,8 +1,8 @@
-import io from 'socket.io-client';
+import * as io from 'socket.io-client';
 
 let localhost =  'http://localhost:5000/';
 let officialhost = 'https://partyscrobbler.herokuapp.com/';
-let socket = io(localhost, {'force new connection': true});
+let socket = io(localhost, {'forceNew': true});
 
 /**
  * Listens to a socket connection.
@@ -10,17 +10,24 @@ let socket = io(localhost, {'force new connection': true});
  */
 export const ServerListener = (components) => {
 
+    function log(data)
+    {
+        console.log("Received data from the server through socket.io: ", data);
+    }
+
     socket.on('recenttrack', (data) => {
         components.viewTrackData(data.track);
         components.viewParty(data.party);
+        log(data);
     });
 
     socket.on('party', (data) => {
-
+        log(data);
     });
 
     socket.on('host', (data) => {
         components.hostView();
+        log(data);
     })
 };
 
@@ -33,7 +40,7 @@ export const ServerCaller = {
         socket.emit('recenttrack', null);
     },
 
-    authenticateUser: (user, token, host) => {
+    authenticateUser: (user, token, host?) => {
         socket.emit('user', {user, token, host});
     },
 

@@ -1,6 +1,10 @@
+/// <reference path="./node_modules/@types/socket.io/index.d.ts"/>
+
+
 import {PartyScrobbler} from "./server/PartyScrobbler";
-import {APICommunicator} from "./server/APICommunicator";
-import {callback, basicLogCallback} from "./server/Callback";
+import {APICommunicator} from "./server/api/APICommunicator";
+import {callback, basicLogCallback} from "./server/util/Callback";
+import {Listener} from "./server/models/Listener";
 import * as url from "url";
 import * as express from "express";
 import * as http from "http";
@@ -22,46 +26,34 @@ class Server
     private adress: string  = this.local;
     private partyScrobbler: PartyScrobbler;
     private apiCommunicator;
-    private PORT     = process.env.PORT || 5000;
+    private PORT = process.env.PORT || 5000;
     private app: express.Server;
-    private io: io;
+    private io: any;
 
     constructor()
     {
-        this.apiCommunicator = new APICommunicator();
+        //Expecting argument 2 and 3 to be KEY and SECRET.
+        this.apiCommunicator = new APICommunicator(process.argv[2], process.argv[3]);
         this.partyScrobbler  = new PartyScrobbler(this.apiCommunicator);
-
-        require('dns').lookup(require('os').hostname(), (err, ip) =>
-        {
-            this.initiateServer();
-        });
-    }
-    
-    private initiateServer(): void
-    {
         this.app = express();
         this.app.use(express.static(path.join(__dirname, './public')));
         const server = require('http').createServer(this.app);
         this.io = io(server);
         server.listen(this.PORT, () => console.log('Server listening on:', this.adress));
         this.declareRoutes();
-        this.checkRecentTrack(); //Iterates over all connected "hosts" and checks for their recent tracks.
+        this.checkRecentTrack(); 
         this.addSocketListeners();
     }
 
     private declareRoutes(): void
     {
-        /**
-         * Client requesting the start-page.
-         */
+        // Client requesting the start-page.
         this.app.get('/', (req, res) =>
         {
             res.sendFile(__dirname + '/index.html');
         });
 
-        /**
-         * Client requesting authentication.
-         */
+        // Client requesting authentication.
         this.app.get('/authenticate', (req, res) =>
         {
             let queryData = url.parse(req.url, true).query;
@@ -79,13 +71,15 @@ class Server
         this.io.on('connection', (socket) =>
         {
             this.clients[socket.id] = socket;
-
+            
+            /*
             socket.on('recenttrack', (data) =>
             {
-                socket.emit('recenttrack', this.partyScrobbler.lastScrobbledTrack);
+                socket.emit('recenttrack', this.partyScrobbler.mostRecentlyScrobbledTrack(data.hostname));
             });
+            */
 
-            // data = {username, token}
+            // register the user 
             socket.on('user', (data) =>
             {
                 this.apiCommunicator.addToken(data.user, data.token);
@@ -108,7 +102,7 @@ class Server
 
             socket.on('party', (hostname) =>
             {
-                socket.emit('party', this.partyScrobbler.hosts[hostname].listeners.map((listener) => listener.username));
+                socket.emit('party', this.partyScrobbler.hosts[hostname].listeners.map((listener) => listener.name));
             });
         });
     }
@@ -135,14 +129,14 @@ class Server
     private sendTrackInfoToClients(hostName)
     {
         let host      = this.partyScrobbler.hosts[hostName];
-        let hostnames = host.listeners.map((listener) => listener.username);
+        let hostnames = host.listeners.map((listener: Listener) => listener.name);
 
         //Notify all clients, including the host, about most recent track.
-        host.listeners.concat(host).forEach((listener) =>
+        [host, ...host.listeners].forEach((listener) =>
         {
             if(host.tracks[0])
             {
-                this.clients[listener.socketid].emit('recenttrack', 
+                this.clients[listener.socketID].emit('recenttrack', 
                 {
                     track: host.tracks[0],
                     party: hostnames

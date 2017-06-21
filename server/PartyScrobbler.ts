@@ -1,19 +1,20 @@
-import { APICommunicator } from "./APICommunicator";
+import { APICommunicator } from "./api/APICommunicator";
+import {Track} from "./models/Track";
+import {Listener} from "./models/Listener";
+import {Host} from "./models/Host";
+
 /**
  * This class is responsible for dealing with users and trackdata.
  */
 export class PartyScrobbler
 {
     private apiCommunicator: APICommunicator;
-    private tracks: any[];
-    public hosts: any;
-    public lastScrobbledTrack: any;
+    public hosts: Host[];
 
     constructor(apiCommunicator: APICommunicator)
     {
-        this.tracks               = [];
         this.apiCommunicator      = apiCommunicator;
-        this.hosts                = {};
+        this.hosts = [];
     }
 
     /**
@@ -21,7 +22,7 @@ export class PartyScrobbler
      * @param latestLastFMTracks The 20 most recent tracks scrobbled by the host (from last.fm)
      * @returns {boolean} true if the track is not scrobbled yet.
      */
-    private isNewTrack(latestLastFMTracks, localTracks)
+    private isNewTrack(latestLastFMTracks, localTracks): boolean
     {
         const string1 = JSON.stringify(latestLastFMTracks[0]);
         const string2 = JSON.stringify(localTracks[0]);
@@ -37,7 +38,7 @@ export class PartyScrobbler
         */
     }
 
-    public addItem(trackdata, hostname)
+    public addItem(trackdata, hostname): void
     {
         let tracks = this.parseTrack(JSON.parse(trackdata));
 
@@ -51,7 +52,7 @@ export class PartyScrobbler
         if(this.isNewTrack(tracks, this.hosts[hostname].tracks))
         {
             this.hosts[hostname].tracks.unshift(tracks[0]);
-            this.hosts[hostname].lastscrobbledtrack = tracks[0];
+            //this.hosts[hostname].lastscrobbledtrack = tracks[0];
             this.scrobbleAllClients(tracks[0], this.hosts[hostname]);
             this.hosts[hostname].tracks.pop();
         }
@@ -64,25 +65,30 @@ export class PartyScrobbler
      * with the information we actually need.
      * @param trackdata
      */
-    private parseTrack(trackdata)
+    private parseTrack(trackdata: any): Track[]
     {
         let track = trackdata.recenttracks.track[0];
 
         return trackdata.recenttracks.track.map( (track) => 
         {
+            /*
             return {
                 artist: track.artist['#text'],
                 name:   track.name,
                 album:  track.album['#text'],
                 image:  track.image[3]["#text"]
             };
+            */
+
+            return new Track(track.artist['#text'], track.name, track.album['#text'], track.image[3]["#text"]);
         });
     }
 
-    public addHost(hostName, socketId)
+    public addHost(hostName, socketId): void
     {
         if(!this.hosts[hostName])
         {
+            /*
             this.hosts[hostName] = 
             {
                 socketid:           socketId,
@@ -92,10 +98,13 @@ export class PartyScrobbler
                 listeners:          []
             };
             console.log("Successfully added a new host:", hostName);
+            */
+            this.hosts[hostName] = new Host(hostName, socketId);
+            console.log("Successfully added a new host:", this.hosts[hostName]);
         }
         else
         {
-            this.hosts[hostName].socketid = socketId;
+            this.hosts[hostName].socketID = socketId;
             console.log("Host already exists");
         }
     }
@@ -112,14 +121,18 @@ export class PartyScrobbler
 
             this.hosts[hostName].listeners = this.hosts[hostName].listeners.filter((listener) =>
             {
-                return listener.username !== userName;
+                return listener.name !== userName;
             });
 
+            this.hosts[hostName].listeners.push(new Listener(userName, socketId));
+
+            /*
             this.hosts[hostName].listeners.push(
             {
                 username: userName,
                 socketid: socketId
             });
+            */
 
             console.log("A new listener has joined: Username: " + userName + ". Host: " + hostName);
         }
@@ -187,15 +200,19 @@ export class PartyScrobbler
      */
     public scrobbleAllClients(track, host)
     {
-
         if(host.listeners)
         {
-            let usernames = host.listeners.map( (listener) => listener.username );
+            let usernames = host.listeners.map( (listener: Listener) => listener.name ) || [];
             this.apiCommunicator.scrobbleAllClients(track, usernames)
         }
         else
         {
             console.log("Canceled initiating of new scrobble, no listeners in party.");
         }
+    }
+
+    public mostRecentlyScrobbledTrack(hostName: string): Track
+    {
+        return this.hosts[hostName].tracks[0];
     }
 }

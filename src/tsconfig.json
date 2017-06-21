@@ -1,0 +1,20 @@
+{
+    "compilerOptions": 
+    {
+        "module": "amd",
+        "outFile": "../public/bundle.js",
+        "target":"es5",
+        "allowJs": true,
+        "typeRoots": [
+            "../node_modules/@types"
+        ]
+    },
+
+    "files": 
+    [
+        "index.ts",
+        "ServerCommunicator.ts",
+        "DOMWorker.ts",
+        "Components.ts"
+    ]
+}

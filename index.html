@@ -4,12 +4,38 @@
 	<meta charset="UTF-8">
 	<title>PartyScrobbler</title>
 	<link rel="stylesheet" href="app.css">
-	<script type="text/javascript" src="bundle.js"></script>
+	<script type="text/javascript" src="system.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<div id="wrapper">
+<main id="wrapper">
 	<h1>The Party Scrobbler</h1>
+	<script>
+
+	System.config({
+		map: {
+			"socket.io-client": "socket.io-client.js",
+			"bundle": "bundle.js"
+		}
+
+	})
+
+	document.addEventListener("DOMContentLoaded", () =>
+	{
+		// Load the file with all modules.
+		SystemJS.import('bundle').then( (result) =>
+		{
+			// Then load a specific module.
+			SystemJS.import('index').then( (module) =>
+			{
+				// Then initiate that module.
+				new module.Index();
+			})
+			
+		}); 
+	})
+
+	</script>
 </div>
 </body>
 </html>
