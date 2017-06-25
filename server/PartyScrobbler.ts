@@ -1,4 +1,4 @@
-import { APICommunicator } from "./api/APICommunicator";
+import { State, CentralDispatcher, ServerActivity, Action } from './State';
 import {Track} from "./models/Track";
 import {Listener} from "./models/Listener";
 import {Host} from "./models/Host";
@@ -8,12 +8,12 @@ import {Host} from "./models/Host";
  */
 export class PartyScrobbler
 {
-    private apiCommunicator: APICommunicator;
+    private centralDispatcher: CentralDispatcher;
     public hosts: Host[];
 
-    constructor(apiCommunicator: APICommunicator)
+    constructor(centralDispatcher: CentralDispatcher)
     {
-        this.apiCommunicator      = apiCommunicator;
+        this.centralDispatcher = centralDispatcher;
         this.hosts = [];
     }
 
@@ -27,37 +27,30 @@ export class PartyScrobbler
         const string1 = JSON.stringify(latestLastFMTracks[0]);
         const string2 = JSON.stringify(localTracks[0]);
         return string1 !== string2;
-
-        /* 
-        Wait with this solution. It's not stable:
-        Do I make the correct request to last.fm (including both album, artist and track)?
-        If the user decides to delete a track everything turns to shit.
-        return !recenttracks.every( (track, index) => {
-            return localTracks[index].name === track.name && localTracks[index].artist === track.artist;
-        })
-        */
     }
 
-    public addItem(trackdata, hostname): void
+    public addItem(trackdata: any, host: Host, hosts: Host[]): Host[]
     {
         let tracks = this.parseTrack(JSON.parse(trackdata));
 
-        if(this.hosts[hostname].tracks.length === 0)
+        if(host.tracks.length === 0)
         {
-            this.hosts[hostname].tracks = tracks;
+            host.tracks = tracks;
             console.log("Added the " + tracks.length + " latest tracks to the host for comparison. None of them were scrobbled.");
-            return;
+            hosts[host.name] = host;
+            return hosts;
         }
 
-        if(this.isNewTrack(tracks, this.hosts[hostname].tracks))
+        if(this.isNewTrack(tracks, host.tracks))
         {
-            this.hosts[hostname].tracks.unshift(tracks[0]);
-            //this.hosts[hostname].lastscrobbledtrack = tracks[0];
-            this.scrobbleAllClients(tracks[0], this.hosts[hostname]);
-            this.hosts[hostname].tracks.pop();
+            this.centralDispatcher.notify(new ServerActivity(Action.API_SCROBBLE_TRACK, {track: tracks[0], host: host}));
+            host.tracks.unshift(tracks[0]);
         }
 
         console.log("Most recently scrobbled track:", tracks[0].name);
+
+        hosts[host.name] = host;
+        return hosts;
     }
 
     /**
@@ -71,90 +64,59 @@ export class PartyScrobbler
 
         return trackdata.recenttracks.track.map( (track) => 
         {
-            /*
-            return {
-                artist: track.artist['#text'],
-                name:   track.name,
-                album:  track.album['#text'],
-                image:  track.image[3]["#text"]
-            };
-            */
-
             return new Track(track.artist['#text'], track.name, track.album['#text'], track.image[3]["#text"]);
         });
     }
 
-    public addHost(hostName, socketId): void
+    /**
+     * Add a new host, but if it already exists we update the socket id.
+     * @param hostName 
+     * @param socketId 
+     */
+    public addHost(hostName, socketId, hosts: Host[]): Host[]
     {
-        if(!this.hosts[hostName])
+        if(!hosts[hostName])
         {
-            /*
-            this.hosts[hostName] = 
-            {
-                socketid:           socketId,
-                lastscrobbledtrack: {},
-                hostname:           hostName,
-                tracks:             [],
-                listeners:          []
-            };
-            console.log("Successfully added a new host:", hostName);
-            */
-            this.hosts[hostName] = new Host(hostName, socketId);
-            console.log("Successfully added a new host:", this.hosts[hostName]);
+            hosts[hostName] = new Host(hostName, socketId);
+            console.log("Successfully added a new host:", hosts[hostName]);
         }
         else
         {
-            this.hosts[hostName].socketID = socketId;
+            hosts[hostName].socketID = socketId;
             console.log("Host already exists");
         }
+
+        return hosts;
     }
 
     /**
      * Adds a new listener to an array on a host object.
      * If the user already exists it's removed and then added again.
      */
-    public addListener(userName, hostName, socketId)
+    public addListener(userName, hostName, socketId, hosts: Host[]): Host[]
     {
-
-        if(this.hosts[hostName])
+        if(hosts[hostName])
         {
-
-            this.hosts[hostName].listeners = this.hosts[hostName].listeners.filter((listener) =>
+            hosts[hostName].listeners = hosts[hostName].listeners.filter((listener) =>
             {
                 return listener.name !== userName;
             });
 
-            this.hosts[hostName].listeners.push(new Listener(userName, socketId));
-
-            /*
-            this.hosts[hostName].listeners.push(
-            {
-                username: userName,
-                socketid: socketId
-            });
-            */
-
+            hosts[hostName].listeners.push(new Listener(userName, socketId));
             console.log("A new listener has joined: Username: " + userName + ". Host: " + hostName);
         }
+
+        return hosts;
     }
 
-    private mergeHostsAndUsers()
+    private mergeHostsAndUsers(hosts?: Array<Host>): Array<Listener|Host>
     {
-        let users = [];
 
-        Object.keys(this.hosts).forEach((key) =>
+        return hosts.reduce( (prev: Array<Host|Listener>, current: Host) =>
         {
-            let host = this.hosts[key];
-
-            if(host.listeners)
-            {
-                host = host.listeners.concat(host)
-            }
-
-            users = users.concat(host);
-        });
-
-        return users;
+            return prev.concat(current.listeners);
+            
+        },[hosts[0]])
     }
 
     /**
@@ -162,53 +124,30 @@ export class PartyScrobbler
      */
     private getUserFromClientId(socketId)
     {
-
         return this.mergeHostsAndUsers().find((user) =>
         {
             return user.socketid === socketId;
         })
     }
 
-    public removeUser(socketId)
+    public removeUser(socketId): Host[]
     {
-        let keys = Object.keys(this.hosts);
-
-        for(let i = 0; i < keys.length; i++)
+        // Filter out the disconnected host IF there is one.
+        let hosts: Host[] = this.hosts.filter( (host) =>
         {
+            return host.socketID !== socketId;
+        })
 
-            if(this.hosts[keys[i]].socketid === socketId)
+        // Iterate over the listeners to remove that one instead.
+        hosts.forEach( (host) =>
+        {
+            host.listeners = host.listeners.filter( (listener) =>
             {
-                delete this.hosts[keys[i]];
-            }
-            else if(this.hosts[keys[i]].listeners)
-            {
-                for(let j = 0; j < this.hosts[keys[i]].listeners.length; j++)
-                {
-                    if(this.hosts[keys[i]].listeners[j].socketid === socketId)
-                    {
-                        this.hosts[keys[i]].listeners.splice(j, 1);
-                    }
-                }
-            }
-        }
-    }
+                return listener.socketID !== socketId;
+            })
+        })
 
-    /**
-     * Iterate over the clients and initiate one scrobble POST request for each.
-     * Should change this method to take in a hostname as well. Then scrobble each
-     * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
-     */
-    public scrobbleAllClients(track, host)
-    {
-        if(host.listeners)
-        {
-            let usernames = host.listeners.map( (listener: Listener) => listener.name ) || [];
-            this.apiCommunicator.scrobbleAllClients(track, usernames)
-        }
-        else
-        {
-            console.log("Canceled initiating of new scrobble, no listeners in party.");
-        }
+        return hosts;
     }
 
     public mostRecentlyScrobbledTrack(hostName: string): Track

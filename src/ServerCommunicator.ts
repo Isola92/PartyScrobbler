@@ -16,18 +16,25 @@ export const ServerListener = (components) => {
     }
 
     socket.on('recenttrack', (data) => {
-        components.viewTrackData(data.track);
-        components.viewParty(data.party);
+        components.viewTrackData(data);
+        ServerCaller.getParty("HugePackage")
+        //components.viewParty(data.party);
         log(data);
     });
 
     socket.on('party', (data) => {
+        components.viewParty(data);
         log(data);
     });
 
     socket.on('host', (data) => {
         components.hostView();
         log(data);
+    });
+
+    socket.on('user', (data) =>
+    {
+        log("User: " +  data);
     })
 };
 
@@ -52,7 +59,7 @@ export const ServerCaller = {
         socket.emit('host', hostname);
     },
 
-    getParty: () => {
-        socket.emit('party', '');
+    getParty: (hostname: string) => {
+        socket.emit('party', hostname);
     }
 };

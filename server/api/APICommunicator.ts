@@ -1,7 +1,8 @@
+import { Listener } from './../models/Listener';
 import {RequestSignatures} from "./RequestSignatures";
 import {RequestOptions} from "./RequestOptions";
 import {basicLogCallback} from "../util/Callback";
-let http   = require('http');
+import * as http from "http";
 let moment = require('moment');
 let xml2js = require('xml2js');
 
@@ -33,12 +34,11 @@ export class APICommunicator
      * Initiates different http-requests depending on the type of method.
      * Fires callbacks to server.js which sends respons to the client.
      */
-    public sendRequest(callback, method, username, track, host)
+    public sendRequest(callback, method, username?, track?, host?)
     {
-
+        console.log("API REQUEST: ", method);
         switch(method)
         {
-
             case 'getRecentTracks':
                 this.makeRecentTrackRequest(callback, host);
                 break;
@@ -110,7 +110,6 @@ export class APICommunicator
         }
 
         return null;
-        //return this.token;
     };
 
     public addItem(body)
@@ -123,14 +122,33 @@ export class APICommunicator
     public addToken(user, token)
     {
         this.tokens[user] = token;
+        return this.tokens;
     }
 
-    public scrobbleAllClients(track, usernames)
+    private scrobbleAllClients(track, usernames)
     {
         usernames.forEach( (username)=>
         {
             this.sendRequest(basicLogCallback, 'scrobbleTrack', username, track, null);
         })
     };
+
+    /**
+     * Iterate over the clients and initiate one scrobble POST request for each.
+     * Should change this method to take in a hostname as well. Then scrobble each
+     * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
+     */
+    public initiateScrobbling(track, host)
+    {
+        if(host.listeners)
+        {
+            let usernames = host.listeners.map( (listener: Listener) => listener.name ) || [];
+            this.scrobbleAllClients(track, usernames)
+        }
+        else
+        {
+            console.log("Canceled initiating of new scrobble, no listeners in party.");
+        }
+    }
 
 }

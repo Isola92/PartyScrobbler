@@ -1,3 +1,5 @@
+import { CentralDispatcher, ServerActivity, Action } from './../State';
+import { Host } from "./../models/Host";
 /**
  * CALLBACKS EXPECTS ARGUMENTS IN THE FORM OF:
  * DATA,
@@ -33,11 +35,34 @@ export function basicLogCallback(response)
 {
     let body = '';
 
-    response.on('data', (chunk) =>{
+    response.on('data', (chunk) =>
+    {
         body += chunk;
     });
 
-    response.on('end', () =>{
-        // console.log("Received data: " + (response));
+    response.on('end', () =>
+    {
+         console.log("Received data: " + (response));
     });
+}
+
+export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, data: any)
+{
+    let args = Array.prototype.slice.call(arguments);
+    
+    //The last argument is always the "response" object from any request (currently Http).
+    const response = args.pop();
+
+    let body = '';
+    response.on('data', (chunk) =>
+    {
+        body += chunk;
+    })
+
+    response.on('end', () =>
+    {
+        dispatcher.notify(new ServerActivity(action, {response: body, data: data }));
+    })
+
+
 }

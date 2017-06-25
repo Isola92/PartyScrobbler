@@ -8,6 +8,7 @@ let hostName = '';
 
 export class Index
 {
+    public hostName: string;
     constructor()
     {
         /**
@@ -25,6 +26,8 @@ export class Index
                 components.mostRecentlyScrobbledSection();
                 //Here we also need to pass the host.
                 ServerCaller.authenticateUser(this.getParameterByName('username'), this.getParameterByName('token'), this.getParameterByName('host'));
+                this.hostName = this.getParameterByName('host');
+
             }
             else
             {
