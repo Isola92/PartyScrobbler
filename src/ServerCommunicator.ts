@@ -8,7 +8,7 @@ let socket = io(localhost, {'forceNew': true});
  * Listens to a socket connection.
  * Fires callbacks to the index.js which updates the DOM and shit.
  */
-export const ServerListener = (components) => {
+export const ServerListener = (callback) => {
 
     function log(data)
     {
@@ -16,25 +16,30 @@ export const ServerListener = (components) => {
     }
 
     socket.on('recenttrack', (data) => {
-        components.viewTrackData(data);
-        ServerCaller.getParty("HugePackage")
+        callback('recenttrack', data)
+        
+        //components.viewTrackData(data);
+        //ServerCaller.getParty("HugePackage")
         //components.viewParty(data.party);
         log(data);
     });
 
     socket.on('party', (data) => {
-        components.viewParty(data);
+        callback('party', data)
+        //components.viewParty(data);
         log(data);
     });
 
-    socket.on('host', (data) => {
-        components.hostView();
-        log(data);
+    socket.on('host', (hostname) => {
+        callback('host', hostname)
+        //components.hostView(hostname);
+        log(hostname);
     });
 
     socket.on('user', (data) =>
     {
         log("User: " +  data);
+        callback('user', data);
     })
 };
 
@@ -48,7 +53,7 @@ export const ServerCaller = {
     },
 
     authenticateUser: (user, token, host?) => {
-        socket.emit('user', {user, token, host});
+        socket.emit('user', {user: user, token:token, host: host});
     },
 
     scrobbleTrack: () => {

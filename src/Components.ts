@@ -10,6 +10,15 @@ import { DomWorker } from './DOMWorker';
  * Todo: Move the element specific info such as type/id/text to JSON-objects.
  */
 
+/**
+ * With templating literals the current solution is obsolete. 
+ * Each component method should take in any numbert of parameters (can be other components)
+ * and return a string. A component should have no dependency on another component. 
+ * 
+ * ServerCommunicator will notify some other (new or index.ts) class which is responsible for sorting out
+ * which components should be rendered.
+ */
+
 export class Components
 {
     private wrapper: HTMLElement;
@@ -21,154 +30,111 @@ export class Components
         this.domWorker = domWorker;
     }
 
-    public inputSection(token)
+    public hostSection(): DocumentFragment
     {
-        let section = document.createElement('section');
+        const DOM = `
+                <section id="hostsection">
+                    <input type="text" id="hostnamehost" placeholder="Host"/>
+                    <button id="hostbutton">Host Party</button>
+                </section>
+            `
 
-        let elements = this.domWorker.createElements(['input', 'button'], ['authenticateField', 'authenticateButton'], ['', 'Submit']);
-        elements = this.domWorker.appendClassName(elements, 'input');
-
-        this.domWorker.appendChildren(section, elements);
-
-        //document.getElementById('wrapper').insertAfter(section, document.getElementByTagName('wrapper').firstChild);
-        document.getElementById('wrapper').appendChild(section);
-
-        let input = document.getElementById('authenticateField').textContent;
-
-        elements[1].addEventListener('click', () =>
+        const documentFragment: DocumentFragment = this.generateDOMFragment(DOM);
+        
+        documentFragment.querySelector("#hostbutton").addEventListener("click", () =>
         {
-            ServerCaller.authenticateUser(input, token);
+            const host = (document.getElementById("hostnamehost") as HTMLInputElement).value;
+            ServerCaller.newHost(host);
         })
-    };
 
-    public startSection()
-    {
-        let section = document.createElement('section');
-        section.id = 'startsection';
-        let elements = this.domWorker.appendClassName(this.domWorker.createElements(['input', 'button', 'input', 'input', 'button'], null, ['', 'Host Party', '', '', 'Join Party']), 'input');
-        this.domWorker.appendChildren(section, elements);
-        this.wrapper.appendChild(section);
-
-        elements[1].addEventListener('click', () =>
-        {
-            ServerCaller.newHost(elements[0].value);
-        });
-
-        elements[4].addEventListener('click', () =>
-        {
-            window.location.href += 'authenticate?username=' + elements[2].value + "&host=" + elements[3].value;
-        });
-    };
-
-    public hostSection()
-    {
-        let elements = this.domWorker.createElements(
-            ['section', 'input', 'button'],
-            null, ['', 'hostname', "Host Party"],
-            true
-        );
-
-        this.wrapper.appendChild(elements[0]);
-
-        elements[0].id = 'hostSection';
-        elements[1].placeholder = "Hostname";
-        elements[2].addEventListener('click', () =>
-        {
-            ServerCaller.newHost(elements[1].value);
-        });
-    };
-
-    public joinSection()
-    {
-        let elements = this.domWorker.createElements(
-            ['section', 'input', 'input', 'button'],
-            null, ['', '', '', 'Join Party'],
-            true
-        );
-
-        this.wrapper.appendChild(elements[0]);
-
-        elements[0].id = 'joinSection';
-        elements[1].placeholder = "Username";
-        elements[2].placeholder = "Hostname";
-        elements[3].addEventListener('click', () =>
-        {
-            window.location.href += 'authenticate?username=' + elements[1].value + "&host=" + elements[2].value;
-        });
+        return documentFragment;
     }
-
-    public mostRecentlyScrobbledSection()
+ 
+    public joinSection(): DocumentFragment
     {
-        let elements = this.domWorker.createElements(
-            ['section', 'h2', 'span', 'span', 'img'], ['', '', 'artist', 'track', 'image'], ['Most recently scrobbled track'],
-            true);
+        const DOM = `
+                <section id="joinsection">
+                    <input type="text" id="usernamejoin" placeholder="Username" />
+                    <input type="text" id="hostnamejoin" placeholder="Hostname" />
+                    <button id="joinbutton">Join Section</button>
+                </section>
+            `
 
-        this.wrapper.appendChild(elements[0]);
-    };
-
-    public viewTrackData(track)
-    {
-        let artistname = document.getElementById('artist');
-        let trackname = document.getElementById('track');
-
-        artistname.innerHTML = track.artist + " - ";
-        trackname.innerHTML = track.name;
-
-        let image = document.getElementById('image') as HTMLImageElement;
-        image.src = track.image;
-    };
-
-    public viewParty(users)
-    {
-
-        let element = document.getElementById('party');
-
-        if (element)
+        const documentFragment = this.generateDOMFragment(DOM);
+        
+        documentFragment.querySelector("#joinbutton").addEventListener("click", () =>
         {
-            this.wrapper.removeChild(element);
-        }
+            const username: string = (document.getElementById("usernamejoin") as HTMLInputElement).value;
+            const hostname: string = (document.getElementById("hostnamejoin") as HTMLInputElement).value;
+            window.location.href = '/authenticate?username=' + username + "&host=" + hostname;
+            
+        })
 
-        let party = this.domWorker.createElements(
-            ['section', 'h2', 'ul'], ['party', '', 'partylist'], ['', 'Users in party', ''],
-            true);
+        return documentFragment;
+   }
 
-        if (users.length > 0)
+    public viewTrackData(track): DocumentFragment
+    {
+        let DOM;
+
+        if(track)
         {
-            users.forEach((user) =>
-            {
-                let listitem = document.createElement('LI');
-                listitem.innerHTML = user;
-                party[2].appendChild(listitem);
-            });
+            DOM = `
+                <section id="trackinfo">
+                    <h2>Latest Track</h2>
+                    <p id="artistname">Artist: ${track.artist}</p>
+                    <p id="trackname">Track: ${track.name}</p>
+                    <p id="albumname">Album: ${track.album}</p>
+                    <img id="image" src=${track.image}/>
+                </section>
+                `
         }
         else
         {
-            party[1].innerHTML = 'Currently no users in your party!'
+            DOM = `
+                <section id="trackinfo">
+                <h2>Waiting for data..</h2>
+                </section>
+            `
         }
 
-        this.wrapper.appendChild(party[0]);
+        return this.generateDOMFragment(DOM);
     };
 
-    public hostView()
+    public viewParty(users): DocumentFragment
     {
-        let joinsection = document.getElementById('joinSection');
-        let hostsection = document.getElementById('hostSection');
-        //let startview = document.getElementById('startsection');
-
-
-        if (hostsection && joinsection)
+        const listeners: string = users.reduce( (prev: string, next: string) =>
         {
-            this.wrapper.removeChild(hostsection);
-            this.wrapper.removeChild(joinsection);
-        }
+            return prev += `<li>${next}</li>`;
+        })
 
-        let hostview = this.domWorker.createElements(
-            ['section', 'h2'], ['hostview', ''], ['', 'Now hosting a party!'],
-            true);
+        const DOM = `
+            <section id="partysection">
+                <h2>Listeners</h2>
+                <ul id="partylist">
+                    ${listeners}
+                <ul>
+            </section>
+        `
 
-        this.wrapper.appendChild(hostview[0]);
-
-        this.mostRecentlyScrobbledSection();
-        this.viewParty([]);
+        return this.generateDOMFragment(DOM);
     };
+
+    public hostView(hostname: string): DocumentFragment
+    {
+        const DOM = `
+            <section id="hostview">
+                <h2>Host</h2>
+                <span id="hostname">${hostname}</span>
+            </section>
+        `
+
+        return this.generateDOMFragment(DOM);
+    }
+
+    private generateDOMFragment(HTMLString: string): DocumentFragment
+    {
+        const range = document.createRange();
+        return range.createContextualFragment(HTMLString);
+    }
 }

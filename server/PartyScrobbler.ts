@@ -2,6 +2,8 @@ import { State, CentralDispatcher, ServerActivity, Action } from './State';
 import {Track} from "./models/Track";
 import {Listener} from "./models/Listener";
 import {Host} from "./models/Host";
+import { HostContainer } from "./types/types";
+
 
 /**
  * This class is responsible for dealing with users and trackdata.
@@ -9,12 +11,10 @@ import {Host} from "./models/Host";
 export class PartyScrobbler
 {
     private centralDispatcher: CentralDispatcher;
-    public hosts: Host[];
 
     constructor(centralDispatcher: CentralDispatcher)
     {
         this.centralDispatcher = centralDispatcher;
-        this.hosts = [];
     }
 
     /**
@@ -22,14 +22,14 @@ export class PartyScrobbler
      * @param latestLastFMTracks The 20 most recent tracks scrobbled by the host (from last.fm)
      * @returns {boolean} true if the track is not scrobbled yet.
      */
-    private isNewTrack(latestLastFMTracks, localTracks): boolean
+    private isNewTrack(latestLastFMTracks: Track[], localTracks: Track[]): boolean
     {
         const string1 = JSON.stringify(latestLastFMTracks[0]);
         const string2 = JSON.stringify(localTracks[0]);
         return string1 !== string2;
     }
 
-    public addItem(trackdata: any, host: Host, hosts: Host[]): Host[]
+    public addItem(trackdata: any, host: Host, hosts: HostContainer ): HostContainer
     {
         let tracks = this.parseTrack(JSON.parse(trackdata));
 
@@ -62,9 +62,9 @@ export class PartyScrobbler
     {
         let track = trackdata.recenttracks.track[0];
 
-        return trackdata.recenttracks.track.map( (track) => 
+        return trackdata.recenttracks.track.map( (track: any) => 
         {
-            return new Track(track.artist['#text'], track.name, track.album['#text'], track.image[3]["#text"]);
+            return new Track(track.artist['#text'], track.name, track.album['#text'], track.image[2]["#text"]);
         });
     }
 
@@ -73,17 +73,20 @@ export class PartyScrobbler
      * @param hostName 
      * @param socketId 
      */
-    public addHost(hostName, socketId, hosts: Host[]): Host[]
+    public addHost(hostName: string, socketId: number, hosts: HostContainer): HostContainer
     {
         if(!hosts[hostName])
         {
             hosts[hostName] = new Host(hostName, socketId);
             console.log("Successfully added a new host:", hosts[hostName]);
+            this.centralDispatcher.notify(new ServerActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: false}))
         }
         else
         {
             hosts[hostName].socketID = socketId;
             console.log("Host already exists");
+            this.centralDispatcher.notify(new ServerActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: true}))
+
         }
 
         return hosts;
@@ -93,7 +96,7 @@ export class PartyScrobbler
      * Adds a new listener to an array on a host object.
      * If the user already exists it's removed and then added again.
      */
-    public addListener(userName, hostName, socketId, hosts: Host[]): Host[]
+    public addListener(userName: string, hostName: string, socketId: number, hosts: HostContainer): HostContainer
     {
         if(hosts[hostName])
         {
@@ -104,54 +107,33 @@ export class PartyScrobbler
 
             hosts[hostName].listeners.push(new Listener(userName, socketId));
             console.log("A new listener has joined: Username: " + userName + ". Host: " + hostName);
+            this.centralDispatcher.notify(new ServerActivity(Action.PROVIDE_PARTY, {hostname: hostName}))
+
         }
 
         return hosts;
     }
 
-    private mergeHostsAndUsers(hosts?: Array<Host>): Array<Listener|Host>
-    {
-
-        return hosts.reduce( (prev: Array<Host|Listener>, current: Host) =>
-        {
-            return prev.concat(current.listeners);
-            
-        },[hosts[0]])
-    }
-
-    /**
-     * Adds users and hosts together and returns one based on it's client-id.
-     */
-    private getUserFromClientId(socketId)
-    {
-        return this.mergeHostsAndUsers().find((user) =>
-        {
-            return user.socketid === socketId;
-        })
-    }
-
-    public removeUser(socketId): Host[]
+    public removeUser(socketId: number, hosts: HostContainer): HostContainer
     {
         // Filter out the disconnected host IF there is one.
-        let hosts: Host[] = this.hosts.filter( (host) =>
-        {
-            return host.socketID !== socketId;
-        })
 
-        // Iterate over the listeners to remove that one instead.
-        hosts.forEach( (host) =>
+        for(let host in hosts)
         {
-            host.listeners = host.listeners.filter( (listener) =>
+            if(hosts[host].socketID === socketId)
             {
-                return listener.socketID !== socketId;
-            })
-        })
+                delete hosts[host];
+                return hosts;
+            }
+            else
+            {
+                hosts[host].listeners = hosts[host].listeners.filter( (listener) =>
+                {
+                    return listener.socketID !== socketId;
+                })
+            }
+        }
 
         return hosts;
-    }
-
-    public mostRecentlyScrobbledTrack(hostName: string): Track
-    {
-        return this.hosts[hostName].tracks[0];
     }
 }

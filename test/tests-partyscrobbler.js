@@ -1,19 +1,20 @@
-//let APICommunicator = require('../server/APICommunicator');
-let PartyScrobbler = require('.././server/PartyScrobbler');
+let APICommunicator = require('../server/api/APICommunicator');
+let PartyScrobbler = require('.././server/PartyScrobbler.js');
 let assert = require('assert');
 
 describe('PartyScrobbler', function()
 {
     let partyScrobbler;
+    let apiCommunicator;
 
     beforeEach( function()
     {
-        partyScrobbler = new PartyScrobbler();
+        apiCommunicator = new APICommunicator.APICommunicator();
+        partyScrobbler = new PartyScrobbler.PartyScrobbler(apiCommunicator);
     })
 
     describe('addHost', function()
     {
-
         it('should add new hosts', function()
         {
             partyScrobbler.addHost('HugePackage', '1');
@@ -27,7 +28,7 @@ describe('PartyScrobbler', function()
             partyScrobbler.addHost('HugePackage', '1');
             partyScrobbler.addHost('HugePackage', '3');
             assert.equal(Object.keys(partyScrobbler.hosts).length, 1);
-            assert.equal(partyScrobbler.hosts['HugePackage'].socketid, '3');
+            assert.equal(partyScrobbler.hosts['HugePackage'].socketID, '3');
         });
     });
 

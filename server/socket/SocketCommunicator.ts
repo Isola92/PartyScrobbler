@@ -25,7 +25,7 @@ export class SocketCommunicator
             this.centralDispatcher.notify(new ServerActivity(Action.ADD_SOCKET_CLIENT, {socket: socket}))
         
             // register the user 
-            socket.on('user', (data) =>
+            socket.on('user', (data: any) =>
             {
                 this.centralDispatcher.notify(new ServerActivity(Action.ADD_TOKEN, {username: data.user, token: data.token}));
                 this.centralDispatcher.notify(new ServerActivity(Action.API_GET_SESSION, {username: data.user}));
@@ -33,10 +33,10 @@ export class SocketCommunicator
                 this.centralDispatcher.notify(new ServerActivity(Action.PROVIDE_USERDATA, {hostname: data.host, socketid:socket.id, user: data.user}))
             });
 
-            socket.on('host', (hostname) =>
+            socket.on('host', (hostname: string) =>
             {
                 this.centralDispatcher.notify(new ServerActivity(Action.ADD_HOST, {hostname: hostname, socketid: socket.id}));
-                socket.emit('host', 'success');
+                socket.emit('host', hostname);
             });
 
             socket.on('disconnect', () =>
@@ -44,19 +44,19 @@ export class SocketCommunicator
                 this.centralDispatcher.notify(new ServerActivity(Action.DELETE_USER, {socketid: socket.id}));
             });
 
-            socket.on('party', (hostname) =>
+            socket.on('party', (hostname: string) =>
             {
                 this.centralDispatcher.notify(new ServerActivity(Action.PROVIDE_PARTY, {hostname: hostname, socketid: socket.id}))
             });
         });
     }
 
-    public sendData(socket, identifier, data)
+    public sendData(socket: SocketIO.Socket, identifier: string, data: any)
     {
         socket.emit(identifier, data);
     }
 
-    public sendToMultipleClients(sockets: SocketIO.Socket[], identifier, data)
+    public sendToMultipleClients(sockets: SocketIO.Socket[], identifier: string, data: any)
     {
         sockets.forEach( (socket: SocketIO.Socket) =>
         {

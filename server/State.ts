@@ -5,24 +5,24 @@ import { Host } from "./models/Host";
 import { Listener } from "./models/Listener";
 import { callback, ActivityCallback } from "./util/Callback";
 import { SocketCommunicator } from "./socket/SocketCommunicator";
+import { HostContainer } from "./types/types";
+import { Parser } from "xml2js";
 
 export class State
 {
     public API_KEY: string;
     public API_SECRET: string;
-    public hosts: Host[]; // {hostName: Host} 
-    public listeners: Listener[] //Each host has an array with listeners.  
-    public tokens: any[]; // {userName: token}
-    public clients: any[]; // {socketId: socket}
-    public sessionTokens = []; // {session.name: session.key}
+    public hosts: HostContainer
+    public tokens: {[username: string]: string}; // {userName: token}
+    public clients: {[socketId: number]: SocketIO.Socket}; // {socketId: socket}
+    public sessionTokens: {[username: string]: string}; // {session.name: session.key}
 
     constructor()
     {
-        this.hosts = [];
-        this.listeners = [];
-        this.tokens = [];
-        this.clients = [];
-        this.sessionTokens = [];
+        this.clients = {};
+        this.hosts = {};
+        this.tokens = {};
+        this.sessionTokens = {}
     }
 }
 
@@ -36,7 +36,7 @@ export class ServerActivity
     public action: Action;
     public data: any;
 
-    constructor(action, data?)
+    constructor(action: Action, data?: any)
     {
         this.action = action;
         this.data = data;    
@@ -61,6 +61,7 @@ export enum Action
     API_GET_RECENT_TRACK = "API_GET_RECENT_TRACK",
     API_RECEIVED_RECENT_TRACK = "API_RECEIVED_RECENT_TRACK",
     API_SCROBBLE_TRACK = "API_SCROBBLE_TRACK",
+    API_RECEIVED_SESSION_TOKEN = "API_RECEIVED_SESSION_TOKEN",
 
     // Socket actions
     EMIT_PARTY = "EMIT_PARTY",
@@ -68,7 +69,8 @@ export enum Action
     ADD_SOCKET_CLIENT = "ADD_SOCKET_CLIENT",
     PROVIDE_PARTY = "PROVIDE_PARTY",
     PROVIDE_LATEST_TRACK = "PROVIDE_LATEST_TRACK",
-    PROVIDE_USERDATA = "PROVIDE_USERDATA"
+    PROVIDE_USERDATA = "PROVIDE_USERDATA",
+    ADD_HOST_RESPONSE = "ADD_HOST_RESPONSE"
 }
 
 /**
@@ -83,6 +85,7 @@ export class CentralDispatcher
     private partyScrobbler: PartyScrobbler;
     private apiCommunicator: APICommunicator;
     private socketCommunicator: SocketCommunicator;
+    private XMLParser: Parser
 
     constructor(state: State)
     {
@@ -90,6 +93,7 @@ export class CentralDispatcher
         this.server = new Server(this);
         this.apiCommunicator = new APICommunicator(process.argv[2], process.argv[3]);
         this.partyScrobbler  = new PartyScrobbler(this);
+        this.XMLParser = new Parser();
 
         setInterval( () =>
         {
@@ -125,15 +129,24 @@ export class CentralDispatcher
                 break;
 
             case Action.ADD_TOKEN:
-                state.tokens = this.apiCommunicator.addToken(data.username, data.token);
+                //state.tokens = this.apiCommunicator.addToken(data.username, data.token);
+                state.tokens[data.username] = data.token;
                 break;
 
             case Action.API_GET_SESSION:
                 // TODO: New callback solution..
                 // Implement a callback that dispatches an action instead.
-                let callbackz = callback.bind(this.apiCommunicator, this.apiCommunicator.addItem);
-                this.apiCommunicator.sendRequest(callbackz, 'getSession', data.username);
+              
+                //let callbackz = callback.bind(this.apiCommunicator, this.apiCommunicator.addItem);
+                let sessionTokenCallback = ActivityCallback.bind(null, this, Action.API_RECEIVED_SESSION_TOKEN)
+                this.apiCommunicator.sendRequest({callback: sessionTokenCallback, method: 'getSession', username: data.username, token: state.tokens[data.username]});
                 break;
+
+            case Action.API_RECEIVED_SESSION_TOKEN:
+                this.XMLParser.parseString(data.response, (err: any, result: any) =>
+                {
+                    state.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
+                });
 
             case Action.API_GET_RECENT_TRACK:
                 console.log("Trying to fetch recent tracks from hosts");
@@ -142,7 +155,7 @@ export class CentralDispatcher
                     const host = state.hosts[hostname];
                     console.log("Sending for host:", host);
                     let callback = ActivityCallback.bind(null, this, Action.API_RECEIVED_RECENT_TRACK, host)
-                    this.apiCommunicator.sendRequest(callback, 'getRecentTracks', null, null, host.name);
+                    this.apiCommunicator.sendRequest({callback: callback, method: 'getRecentTracks', host: host.name} );
                 }
                 break;
 
@@ -152,7 +165,7 @@ export class CentralDispatcher
                 break;
 
             case Action.API_SCROBBLE_TRACK: 
-                this.apiCommunicator.initiateScrobbling(data.track, data.host);
+                this.apiCommunicator.initiateScrobbling(data.track, data.host, state.sessionTokens);
                 break;
 
             case Action.ADD_LISTENER:
@@ -168,16 +181,17 @@ export class CentralDispatcher
                 break;
 
             case Action.PROVIDE_PARTY:
-                const socket = state.clients[data.socketid];
                 const partyMembers = state.hosts[data.hostname].listeners.map( (listener) => listener.name);
-                this.socketCommunicator.sendData(socket, 'party', partyMembers);
+                const socketIds = [state.hosts[data.hostname].listeners.map( (listener) => listener.socketID), state.hosts[data.hostname].socketID];
+                const sockets = socketIds.map( (socketId: number) => state.clients[socketId]);
+                this.socketCommunicator.sendToMultipleClients(sockets, 'party', partyMembers);
                 break;
 
             case Action.PROVIDE_USERDATA:
                 const host = state.hosts[data.hostname];
                 const socketz = state.clients[data.socketid];
                 const listener = host.listeners.filter( (listener: Listener) => listener.socketID === data.socketid);
-                this.socketCommunicator.sendData(socketz, 'user', listener)
+                this.socketCommunicator.sendData(socketz, 'user', {listener: listener, host: data.hostname});
 
             case Action.PROVIDE_LATEST_TRACK:
                 for(var hostname in state.hosts)
@@ -194,7 +208,11 @@ export class CentralDispatcher
 
             case Action.DELETE_USER:
                 delete state.clients[data.socketid];
-                this.partyScrobbler.removeUser(data.socketid);
+                state.hosts = this.partyScrobbler.removeUser(data.socketid, state.hosts);
+                break;
+
+            case Action.ADD_HOST_RESPONSE:
+                this.socketCommunicator.sendData(state.clients[data.socketid], "host", data.hostname);
                 break;
         }
 

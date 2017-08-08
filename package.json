@@ -5,14 +5,16 @@
   "scripts": {
     "test": "mocha",
     "watch": "./node_modules/.bin/webpack -d --watch",
-    "start": "devtool ./server/State.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630" 
+    "start": "devtool ./bin/server/State.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630"
   },
   "author": "Olof Lindell",
   "license": "ISC",
   "dependencies": {
+    "@types/express": "^4.0.36",
     "@types/node": "^7.0.31",
     "@types/socket.io": "^1.4.29",
     "@types/socket.io-client": "^1.4.29",
+    "@types/xml2js": "^0.4.0",
     "express": "^4.14.0",
     "mocha": "^3.2.0",
     "moment": "*",

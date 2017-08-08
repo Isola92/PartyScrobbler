@@ -4,6 +4,22 @@
             "./node_modules/@types"
         ],
 
-        "allowJs": true
-    }  
+        "allowJs": true,
+        "noImplicitAny": true,
+        "outDir": "./bin"
+    },
+    "files":
+    [
+        "server.ts",
+        "./server/State.ts",
+        "./server/PartyScrobbler.ts",
+        "./server/api/APICommunicator.ts",
+        "./server/api/RequestOptions.ts",
+        "./server/api/RequestSignatures.ts",
+        "./server/models/Host.ts",
+        "./server/models/Listener.ts",
+        "./server/models/Track.ts",
+        "./server/socket/SocketCommunicator.ts",
+        "./server/util/Callback.ts"
+    ]
 }      

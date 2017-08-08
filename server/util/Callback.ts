@@ -20,7 +20,7 @@ export function callback()
     let passData = args.pop();
 
     //The data from our requests might be returned in chunks. We add these together.
-    response.on('data', (chunk) =>{
+    response.on('data', (chunk: any) =>{
         body += chunk;
     });
 
@@ -31,11 +31,11 @@ export function callback()
     });
 }
 
-export function basicLogCallback(response) 
+export function basicLogCallback(response: any): void 
 {
     let body = '';
 
-    response.on('data', (chunk) =>
+    response.on('data', (chunk: any) =>
     {
         body += chunk;
     });
@@ -46,7 +46,7 @@ export function basicLogCallback(response)
     });
 }
 
-export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, data: any)
+export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, data?: any)
 {
     let args = Array.prototype.slice.call(arguments);
     
@@ -54,7 +54,7 @@ export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, 
     const response = args.pop();
 
     let body = '';
-    response.on('data', (chunk) =>
+    response.on('data', (chunk: any) =>
     {
         body += chunk;
     })

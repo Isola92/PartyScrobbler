@@ -3,52 +3,48 @@ import {RequestSignatures} from "./RequestSignatures";
 import {RequestOptions} from "./RequestOptions";
 import {basicLogCallback} from "../util/Callback";
 import * as http from "http";
+import { RequestParameters } from "../types/types";
+import { Host } from "../models/Host";
+import { Track } from "../models/Track";
 let moment = require('moment');
 let xml2js = require('xml2js');
-
 let XMLParser  = new xml2js.Parser();
-//let callbacks = require('./Callback');
 
 export class APICommunicator
 {
     public key: any;
-    public hosts: any[];
-    public tokens: any[];
     public sessionTokens: any[];
-    public token: any[];
     public requestOptions: RequestOptions;
     public requestSignatures: RequestSignatures;
 
     constructor(key: string, secret: string)
     {
         this.key = key;
-        this.hosts = [];
-        this.tokens = [];
         this.sessionTokens = [];
         this.requestOptions = new RequestOptions(key);
         this.requestSignatures = new RequestSignatures(key, secret);
     }
 
-
     /**
      * Initiates different http-requests depending on the type of method.
      * Fires callbacks to server.js which sends respons to the client.
+     * The optional parameters should be passed in an object instead.
      */
-    public sendRequest(callback, method, username?, track?, host?)
+    public sendRequest(params: RequestParameters)
     {
-        console.log("API REQUEST: ", method);
-        switch(method)
+        console.log("API REQUEST: ", params.method);
+        switch(params.method)
         {
             case 'getRecentTracks':
-                this.makeRecentTrackRequest(callback, host);
+                this.makeRecentTrackRequest(params.callback, params.host);
                 break;
 
             case 'getSession':
-                this.makeSessionRequest('methodauth.getSession', username, callback);
+                this.makeSessionRequest('methodauth.getSession', params.callback, params.token);
                 break;
 
             case 'scrobbleTrack':
-                this.makeScrobbleRequest(track, username, callback);
+                this.makeScrobbleRequest(params.track, params.username, params.callback, params.sessionToken);
                 break;
 
             default:
@@ -56,28 +52,27 @@ export class APICommunicator
         }
     };
 
-    public makeScrobbleRequest(track, username, callback)
+    public makeScrobbleRequest(track: Track, username: string, callback: () => void, sessionToken: string)
     {
         let req = http.request(this.requestOptions.getScrobbleTrackOptions(), callback);
-        req.write(this.getScrobbleBody('methodtrack.scrobble', track, username));
+        req.write(this.getScrobbleBody('methodtrack.scrobble', track, sessionToken));
         req.end();
     };
 
-    public makeRecentTrackRequest(callback, host)
+    public makeRecentTrackRequest(callback: () => void, hostname: string)
     {
-        http.request(this.requestOptions.getRecentTrackOptions(host), callback).end();
+        http.request(this.requestOptions.getRecentTrackOptions(hostname), callback).end();
     };
 
-    public makeSessionRequest(method, user, callback)
+    public makeSessionRequest(method: string, callback: () => void, token: string)
     {
-        let token = this.getToken(user);
         let signature = this.requestSignatures.getSessionSignature(method, token);
         http.request(this.requestOptions.getSessionOptions(signature, token), callback).end();
     };
 
-    public getScrobbleBody(method, track, user)
+    public getScrobbleBody(method: string, track: Track, sessionToken: string)
     {
-        let sk                = this.getSessionKey(user);
+        let sk                = sessionToken
         let time              = moment().unix();
         let encodedtrackname  = encodeURIComponent(track.name);
         let encodedartistname = encodeURIComponent(track.artist);
@@ -90,46 +85,14 @@ export class APICommunicator
             track:      track.name
         };
 
-        return 'api_key=' + this.getkey() + '&api_sig=' + this.requestSignatures.getScrobbleSignature(config) + '&artist=' + encodedartistname + '&method=track.scrobble' + '&sk=' + this.getSessionKey(user) + '&timestamp=' + time + '&track=' + encodedtrackname;
+        return 'api_key=' + this.key + '&api_sig=' + this.requestSignatures.getScrobbleSignature(config) + '&artist=' + encodedartistname + '&method=track.scrobble' + '&sk=' + sk + '&timestamp=' + time + '&track=' + encodedtrackname;
     };
 
-    public getkey(): string
-    {
-        return this.key;
-    };
-
-    public getSessionKey(username): string
-    {
-        return this.sessionTokens[username];
-    };
-
-    public getToken(username): string
-    {
-        if(this.tokens[username] !== undefined){
-            return this.tokens[username];
-        }
-
-        return null;
-    };
-
-    public addItem(body)
-    {
-        XMLParser.parseString(body, (err, result) =>{
-            this.sessionTokens[result.lfm.session[0].name] = result.lfm.session[0].key[0];
-        });
-    };
-
-    public addToken(user, token)
-    {
-        this.tokens[user] = token;
-        return this.tokens;
-    }
-
-    private scrobbleAllClients(track, usernames)
+    private scrobbleAllClients(track: Track, usernames: string[], sessionTokens: {[username: string]: string})
     {
         usernames.forEach( (username)=>
         {
-            this.sendRequest(basicLogCallback, 'scrobbleTrack', username, track, null);
+            this.sendRequest({callback: basicLogCallback, method: 'scrobbleTrack', username: username, track: track, sessionToken: sessionTokens[username]});
         })
     };
 
@@ -138,12 +101,12 @@ export class APICommunicator
      * Should change this method to take in a hostname as well. Then scrobble each
      * listener connected to that host. Will also have to add a mapping between username and sessiontoken.
      */
-    public initiateScrobbling(track, host)
+    public initiateScrobbling(track: Track, host: Host, sessionTokens: {[username: string]: string})
     {
-        if(host.listeners)
+        if(host.listeners.length > 0)
         {
             let usernames = host.listeners.map( (listener: Listener) => listener.name ) || [];
-            this.scrobbleAllClients(track, usernames)
+            this.scrobbleAllClients(track, usernames, sessionTokens)
         }
         else
         {

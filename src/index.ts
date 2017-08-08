@@ -1,3 +1,4 @@
+import { Listener } from './../server/models/Listener';
 import {ServerListener} from './ServerCommunicator';
 import {ServerCaller} from './ServerCommunicator';
 import {Components} from './Components'
@@ -9,57 +10,27 @@ let hostName = '';
 export class Index
 {
     public hostName: string;
+    private components: Components;
+    private wrapper: HTMLElement;
+
     constructor()
     {
-        /**
-         * Initiates the component who listens for socket.io updates.
-         * And some click-events.
-         */
+        let domWorker = new DomWorker();
+        this.components = new Components(domWorker);
+        this.wrapper = document.getElementById('wrapper');
 
+        ServerListener(this.notify.bind(this));
 
-            let domWorker = new DomWorker();
-            let components = new Components(domWorker);
-            ServerListener(components);
-
-            if (this.getParameterByName('token'))
-            {
-                components.mostRecentlyScrobbledSection();
-                //Here we also need to pass the host.
-                ServerCaller.authenticateUser(this.getParameterByName('username'), this.getParameterByName('token'), this.getParameterByName('host'));
-                this.hostName = this.getParameterByName('host');
-
-            }
-            else
-            {
-
-                //Instead of initiating different components directly I could fire various events to a controller which initiates various views.
-                components.hostSection();
-                components.joinSection();
-            }
-
-        /*
-        document.addEventListener('DOMContentLoaded', () =>
+        if (this.getParameterByName('token'))
         {
-
-            let domWorker = new DomWorker();
-            let components = new Components(domWorker);
-            ServerListener(components);
-
-            if (this.getParameterByName('token'))
-            {
-                components.mostRecentlyScrobbledSection();
-                //Here we also need to pass the host.
-                ServerCaller.authenticateUser(this.getParameterByName('username'), this.getParameterByName('token'), this.getParameterByName('host'));
-            }
-            else
-            {
-
-                //Instead of initiating different components directly I could fire various events to a controller which initiates various views.
-                components.hostSection();
-                components.joinSection();
-            }
-        });
-        */
+            ServerCaller.authenticateUser(this.getParameterByName('username'), this.getParameterByName('token'), this.getParameterByName('host'));
+            this.hostName = this.getParameterByName('host');
+        }
+        else
+        {
+            this.updateNode('hostsection', this.components.hostSection());
+            this.updateNode('joinsection', this.components.joinSection());
+        }
     }
 
 
@@ -82,5 +53,48 @@ export class Index
             return '';
         }
         return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    public notify(action: string, data: any)
+    {
+        switch(action)
+        {
+            case "recenttrack":
+                this.updateNode("trackinfo", this.components.viewTrackData(data))
+                break;
+
+            case "party":
+                this.updateNode("partysection", this.components.viewParty(data));
+                break;
+
+            case "host":
+                this.updateNode("joinsection");
+                this.updateNode("hostsection")
+                this.updateNode("hostview", this.components.hostView(data));
+                break;
+
+            case "user":
+                this.updateNode("hostview", this.components.hostView(data.host));
+        }
+    }
+
+    private updateNode(id?: string, newNode?: DocumentFragment, parent?: string)
+    {
+        const parentNode = document.getElementById(parent) || this.wrapper;
+        const oldNode = document.getElementById(id);
+
+        if(!newNode && oldNode)
+        {
+            parentNode.removeChild(oldNode);
+        }
+        else if(oldNode)
+        {
+            parentNode.replaceChild(newNode, oldNode);
+        }
+        else
+        {
+            parentNode.appendChild(newNode);
+        }
+
     }
 }

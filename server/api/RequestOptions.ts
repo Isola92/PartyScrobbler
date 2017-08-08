@@ -14,12 +14,12 @@ export class RequestOptions
 {
     private key: string;
 
-    constructor(key)
+    constructor(key: string)
     {
         this.key = key;
     }
 
-    public getSessionOptions(signature, token): RequestOption
+    public getSessionOptions(signature: string, token: string): RequestOption
     {
         return {
             host: 'ws.audioscrobbler.com',
@@ -28,7 +28,7 @@ export class RequestOptions
         };
     };
 
-    public getRecentTrackOptions(host): RequestOption
+    public getRecentTrackOptions(host: string): RequestOption
     {
         return {
             host: 'ws.audioscrobbler.com',

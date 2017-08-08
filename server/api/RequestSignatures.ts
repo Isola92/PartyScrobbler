@@ -12,7 +12,7 @@ export class RequestSignatures
         this.secret = secret;
     }
 
-    public getSessionSignature(method, token): string
+    public getSessionSignature(method: string, token: string): string
     {
         const API_KEY = this.key;
         const API_SECRET = this.secret;
@@ -28,7 +28,7 @@ export class RequestSignatures
         return this.createHash(secret, 'md5');
     };
 
-    public getScrobbleSignature(config): string
+    public getScrobbleSignature(config: any): string
     {
         const API_KEY = this.key;
         const API_SECRET = this.secret;
@@ -50,7 +50,7 @@ export class RequestSignatures
         return this.createHash(signature, 'md5');
     };
 
-    private createHash(string, someGoodHash): string
+    private createHash(string: string, someGoodHash: string): string
     {
         return crypto.createHash(someGoodHash).update(string).digest('hex');
     };
