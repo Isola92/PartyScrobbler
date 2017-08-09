@@ -10,7 +10,7 @@
     },
     "files":
     [
-        "server.ts",
+        "./server/Server.ts",
         "./server/State.ts",
         "./server/PartyScrobbler.ts",
         "./server/api/APICommunicator.ts",

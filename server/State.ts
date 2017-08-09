@@ -1,5 +1,5 @@
-import { APICommunicator } from './api/APICommunicator';
-import { Server } from './../server';
+import { APICommunicator } from "./api/APICommunicator";
+import { Server } from "./Server";
 import { PartyScrobbler } from './PartyScrobbler';
 import { Host } from "./models/Host";
 import { Listener } from "./models/Listener";

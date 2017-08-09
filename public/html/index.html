@@ -3,12 +3,13 @@
 <head>
 	<meta charset="UTF-8">
 	<title>PartyScrobbler</title>
-	<link rel="stylesheet" href="app.css">
-	<script type="text/javascript" src="system.js"></script>
+	<link rel="stylesheet" href="./css/app.css">
+	<script type="text/javascript" src="../system.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <main id="wrapper">
+
 	<h1>The Party Scrobbler</h1>
 	<script>
 
@@ -26,7 +27,7 @@
 		SystemJS.import('bundle').then( (result) =>
 		{
 			// Then load a specific module.
-			SystemJS.import('index').then( (module) =>
+			SystemJS.import('client/index').then( (module) =>
 			{
 				// Then initiate that module.
 				new module.Index();

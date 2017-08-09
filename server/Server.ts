@@ -1,6 +1,6 @@
-import { CentralDispatcher, Action, ServerActivity } from './server/State';
-import {callback, basicLogCallback} from "./server/util/Callback";
-import {Listener} from "./server/models/Listener";
+import { CentralDispatcher, Action, ServerActivity } from './State';
+import {callback, basicLogCallback} from "./util/Callback";
+import {Listener} from "./models/Listener";
 import * as url from "url";
 import * as express from "express";
 import * as http from "http";
