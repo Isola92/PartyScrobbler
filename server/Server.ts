@@ -1,4 +1,6 @@
-import { CentralDispatcher, Action, ServerActivity } from './State';
+import { CentralDispatcher } from './State';
+import { Action } from "./constants/Action";
+import { SocketActivity } from "./activities/Activities";
 import {callback, basicLogCallback} from "./util/Callback";
 import {Listener} from "./models/Listener";
 import * as url from "url";
@@ -32,7 +34,7 @@ export class Server
         this.app.use(express.static(path.join(__dirname, '../', 'public')));
         this.server = http.createServer(this.app);
         this.server.listen(this.PORT, () => console.log('Server listening on:', this.adress));
-        this.centralDispatcher.notify(new ServerActivity(Action.START_SOCKETS, {server: this.server}));
+        this.centralDispatcher.notify(new SocketActivity(Action.START_SOCKETS, {server: this.server}));
         this.declareRoutes();
     }
 

@@ -4,11 +4,16 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\server\\State.js"
+            "program": "${workspaceFolder}/bin/State.js",
+            "args": [
+                "a05b8d216b62ceec197a37a8b9f11f20",
+                "446fdb19f81071345f7d2da22e327630"
+            ]
         }
     ]
 }

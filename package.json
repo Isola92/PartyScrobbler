@@ -4,8 +4,7 @@
   "description": "",
   "scripts": {
     "test": "mocha",
-    "watch": "./node_modules/.bin/webpack -d --watch",
-    "start": "devtool ./bin/server/State.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630"
+    "start": "node ./bin/server/State.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630"
   },
   "author": "Olof Lindell",
   "license": "ISC",

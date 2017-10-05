@@ -34,8 +34,9 @@ export class Components
     {
         const DOM = `
                 <section id="hostsection">
-                    <input type="text" id="hostnamehost" placeholder="Host"/>
-                    <button id="hostbutton">Host Party</button>
+                    <h2>Host Party</h2>
+                    <input type="text" id="hostnamehost" placeholder="Hostname"/>
+                    <button id="hostbutton">Submit</button>
                 </section>
             `
 
@@ -54,9 +55,10 @@ export class Components
     {
         const DOM = `
                 <section id="joinsection">
+                    <h2>Join Party</h2>
                     <input type="text" id="usernamejoin" placeholder="Username" />
                     <input type="text" id="hostnamejoin" placeholder="Hostname" />
-                    <button id="joinbutton">Join Section</button>
+                    <button id="joinbutton">Submit</button>
                 </section>
             `
 
@@ -119,6 +121,18 @@ export class Components
 
         return this.generateDOMFragment(DOM);
     };
+
+    public infoSection(): DocumentFragment
+    {
+        const DOM = `
+        <section id="infosection">
+            <p>Don't keep all them scrobbles to yourself. Share them with your friends with this tool!</p>
+            <p>As a polite host you should create a party to sync your current listening activity with your friends.</p>
+        </section>
+        `
+
+        return this.generateDOMFragment(DOM);
+    }
 
     public hostView(hostname: string): DocumentFragment
     {

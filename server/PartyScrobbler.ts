@@ -1,9 +1,10 @@
-import { State, CentralDispatcher, ServerActivity, Action } from './State';
-import {Track} from "./models/Track";
-import {Listener} from "./models/Listener";
-import {Host} from "./models/Host";
+import { State, CentralDispatcher } from './State';
+import { UserActivity, APIActivity } from "./activities/Activities";
+import { Action } from "./constants/Action";
+import { Track } from "./models/Track";
+import { Listener } from "./models/Listener";
+import { Host } from "./models/Host";
 import { HostContainer } from "./types/types";
-
 
 /**
  * This class is responsible for dealing with users and trackdata.
@@ -43,7 +44,7 @@ export class PartyScrobbler
 
         if(this.isNewTrack(tracks, host.tracks))
         {
-            this.centralDispatcher.notify(new ServerActivity(Action.API_SCROBBLE_TRACK, {track: tracks[0], host: host}));
+            this.centralDispatcher.notify(new APIActivity(Action.API_SCROBBLE_TRACK, {track: tracks[0], host: host}));
             host.tracks.unshift(tracks[0]);
         }
 
@@ -79,13 +80,13 @@ export class PartyScrobbler
         {
             hosts[hostName] = new Host(hostName, socketId);
             console.log("Successfully added a new host:", hosts[hostName]);
-            this.centralDispatcher.notify(new ServerActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: false}))
+            this.centralDispatcher.notify(new UserActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: false}))
         }
         else
         {
             hosts[hostName].socketID = socketId;
             console.log("Host already exists");
-            this.centralDispatcher.notify(new ServerActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: true}))
+            this.centralDispatcher.notify(new UserActivity(Action.ADD_HOST_RESPONSE, {hostname: hostName, socketid: socketId, existing: true}))
 
         }
 
@@ -107,8 +108,7 @@ export class PartyScrobbler
 
             hosts[hostName].listeners.push(new Listener(userName, socketId));
             console.log("A new listener has joined: Username: " + userName + ". Host: " + hostName);
-            this.centralDispatcher.notify(new ServerActivity(Action.PROVIDE_PARTY, {hostname: hostName}))
-
+            this.centralDispatcher.notify(new UserActivity(Action.PROVIDE_PARTY, {hostname: hostName}))
         }
 
         return hosts;

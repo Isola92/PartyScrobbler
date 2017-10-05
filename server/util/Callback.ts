@@ -1,5 +1,7 @@
-import { CentralDispatcher, ServerActivity, Action } from './../State';
-import { Host } from "./../models/Host";
+import { CentralDispatcher } from './../State';
+import { ServerActivity } from "../activities/Activities";
+import { Action } from "./../constants/Action";
+
 /**
  * CALLBACKS EXPECTS ARGUMENTS IN THE FORM OF:
  * DATA,
@@ -46,7 +48,7 @@ export function basicLogCallback(response: any): void
     });
 }
 
-export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, data?: any)
+export function ActivityCallback(dispatcher: CentralDispatcher, activity: ServerActivity, data?: any)
 {
     let args = Array.prototype.slice.call(arguments);
     
@@ -61,8 +63,12 @@ export function ActivityCallback(dispatcher: CentralDispatcher, action: Action, 
 
     response.on('end', () =>
     {
-        dispatcher.notify(new ServerActivity(action, {response: body, data: data }));
+        activity.data = 
+        {
+            response: body,
+            data: data
+        }
+
+        dispatcher.notify(activity);
     })
-
-
 }
