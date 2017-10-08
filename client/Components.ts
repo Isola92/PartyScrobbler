@@ -77,7 +77,7 @@ export class Components
 
 	public viewTrackData(track): DocumentFragment
 	{
-		let DOM;
+		let DOM = ``;
 
 		if (track)
 		{
@@ -91,14 +91,6 @@ export class Components
                 </section>
                 `
 		}
-		else
-		{
-			DOM = `
-                <section id="trackinfo">
-                <h2>Waiting for data..</h2>
-                </section>
-            `
-		}
 
 		return this.generateDOMFragment(DOM);
 	};
@@ -111,12 +103,12 @@ export class Components
 		})
 
 		const DOM = `
-            <section id="partysection">
-                <h2>Listeners</h2>
-                <ul id="partylist">
-                    ${listeners}
-                <ul>
-            </section>
+		<section id="partysection">
+			<h2>Listeners</h2>
+			<ul id="partylist">
+				${listeners}
+			<ul>
+		</section>
         `
 
 		return this.generateDOMFragment(DOM);
@@ -137,11 +129,29 @@ export class Components
 	public hostView(hostname: string): DocumentFragment
 	{
 		const DOM = `
-            <section id="hostview">
-                <h2>Host</h2>
-                <span id="hostname">${hostname}</span>
-            </section>
+		<section id="hostview">
+			<h2>Host</h2>
+			<span id="hostname">${hostname}</span>
+		</section>
         `
+
+		return this.generateDOMFragment(DOM);
+	}
+
+	public loadingIndicator(): DocumentFragment
+	{
+		const DOM = `
+		<div id="loadingindicator">
+		<span>Waiting for data...</span>
+			<div class="sk-wave">
+				<div class="sk-rect sk-rect1"></div>
+				<div class="sk-rect sk-rect2"></div>
+				<div class="sk-rect sk-rect3"></div>
+				<div class="sk-rect sk-rect4"></div>
+				<div class="sk-rect sk-rect5"></div>
+			</div>
+		</div>
+		`
 
 		return this.generateDOMFragment(DOM);
 	}

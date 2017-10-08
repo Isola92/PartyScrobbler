@@ -40,7 +40,12 @@ export class Index
 		switch (action)
 		{
 			case "recenttrack":
-				this.domWorker.addNode("trackinfo", this.components.viewTrackData(data), this.wrapper.id)
+				if (data)
+				{
+					this.domWorker.addNode("trackinfo", this.components.viewTrackData(data), this.wrapper.id);
+					this.domWorker.removeNode("loadingindicator", this.wrapper.id);
+				}
+
 				break;
 
 			case "party":
@@ -51,6 +56,7 @@ export class Index
 				this.domWorker.removeNode("joinsection", this.wrapper.id);
 				this.domWorker.removeNode("hostsection", this.wrapper.id);
 				this.domWorker.addNode("hostview", this.components.hostView(data), this.wrapper.id);
+				this.domWorker.addNode("loadingindicator", this.components.loadingIndicator(), this.wrapper.id);
 				break;
 
 			case "user":

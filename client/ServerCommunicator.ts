@@ -10,7 +10,6 @@ let socket = io(localhost, { "forceNew": true });
  */
 export const ServerListener = (callback) =>
 {
-
 	function log(data)
 	{
 		console.log("Received data from the server through socket.io: ", data);
@@ -19,24 +18,18 @@ export const ServerListener = (callback) =>
 	socket.on("recenttrack", (data) =>
 	{
 		callback("recenttrack", data)
-
-		//components.viewTrackData(data);
-		//ServerCaller.getParty("HugePackage")
-		//components.viewParty(data.party);
 		log(data);
 	});
 
 	socket.on("party", (data) =>
 	{
 		callback("party", data)
-		//components.viewParty(data);
 		log(data);
 	});
 
 	socket.on("host", (hostname) =>
 	{
 		callback("host", hostname)
-		//components.hostView(hostname);
 		log(hostname);
 	});
 

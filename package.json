@@ -1,24 +1,25 @@
 {
-  "name": "partyscrobbling",
-  "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "test": "mocha",
-    "start": "node ./bin/server/State.js a05b8d216b62ceec197a37a8b9f11f20 446fdb19f81071345f7d2da22e327630"
-  },
-  "author": "Olof Lindell",
-  "license": "ISC",
-  "dependencies": {
-    "@types/express": "^4.0.36",
-    "@types/node": "^7.0.31",
-    "@types/socket.io": "^1.4.29",
-    "@types/socket.io-client": "^1.4.29",
-    "@types/xml2js": "^0.4.0",
-    "express": "^4.14.0",
-    "mocha": "^3.2.0",
-    "moment": "*",
-    "socket.io": "*",
-    "socket.io-client": "*",
-    "xml2js": "*"
-  }
+	"name": "partyscrobbling",
+	"version": "1.0.0",
+	"description": "",
+	"scripts":
+	{
+		"test": "mocha"
+	},
+	"author": "Olof Lindell",
+	"license": "ISC",
+	"dependencies":
+	{
+		"@types/express": "^4.0.36",
+		"@types/node": "^7.0.31",
+		"@types/socket.io": "^1.4.29",
+		"@types/socket.io-client": "^1.4.29",
+		"@types/xml2js": "^0.4.0",
+		"express": "^4.14.0",
+		"mocha": "^3.2.0",
+		"moment": "*",
+		"socket.io": "*",
+		"socket.io-client": "*",
+		"xml2js": "*"
+	}
 }

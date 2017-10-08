@@ -1,5 +1,5 @@
 import { State, CentralDispatcher } from "./State";
-import { UserActivity, APIActivity } from "./activities/Activities";
+import { UserActivity, APIActivity, SocketActivity } from "./activities/Activities";
 import { Action } from "./constants/Action";
 import { Track } from "./models/Track";
 import { Listener } from "./models/Listener";
@@ -108,7 +108,7 @@ export class PartyScrobbler
 
 			hosts[hostName].listeners.push(new Listener(userName, socketId));
 			console.log("A new listener has joined: Username: " + userName + ". Host: " + hostName);
-			this.centralDispatcher.notify(new UserActivity(Action.PROVIDE_PARTY, { hostname: hostName }))
+			this.centralDispatcher.notify(new SocketActivity(Action.PROVIDE_PARTY, { hostname: hostName }))
 		}
 
 		return hosts;

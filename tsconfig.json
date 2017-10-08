@@ -1,25 +1,16 @@
 {
-    "compilerOptions": {
-        "typeRoots": [
-            "./node_modules/@types"
-        ],
+	"compilerOptions":
+	{
+		"typeRoots": [
+			"./node_modules/@types"
+		],
 
-        "allowJs": true,
-        "noImplicitAny": true,
-        "outDir": "./bin"
-    },
-    "files":
-    [
-        "./server/Server.ts",
-        "./server/State.ts",
-        "./server/PartyScrobbler.ts",
-        "./server/api/APICommunicator.ts",
-        "./server/api/RequestOptions.ts",
-        "./server/api/RequestSignatures.ts",
-        "./server/models/Host.ts",
-        "./server/models/Listener.ts",
-        "./server/models/Track.ts",
-        "./server/socket/SocketCommunicator.ts",
-        "./server/util/Callback.ts"
-    ]
-}      
+		"allowJs": true,
+		"noImplicitAny": true,
+		"outDir": "./bin"
+	},
+
+	"include": [
+		"server/**/*"
+	]
+}
