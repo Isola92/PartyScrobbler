@@ -1,4 +1,4 @@
-import {Action, ActionType} from "../constants/Action";
+import { Action, ActionType } from "../constants/Action";
 
 /**
  * When a class has a request that requires some state 
@@ -7,38 +7,38 @@ import {Action, ActionType} from "../constants/Action";
  */
 export class ServerActivity
 {
-    public action: Action;
-    public data: any;
-    public actionType: ActionType;
+	public action: Action;
+	public data: any;
+	public actionType: ActionType;
 
-    constructor(action: Action, actionType: ActionType, data?: any)
-    {
-        this.action = action;
-        this.data = data;
-        this.actionType = actionType;
-    }
+	constructor(action: Action, actionType: ActionType, data ? : any)
+	{
+		this.action = action;
+		this.data = data;
+		this.actionType = actionType;
+	}
 }
 
 export class APIActivity extends ServerActivity
 {
-    constructor(action: Action, data?: any)
-    {
-        super(action, ActionType.API, data);
-    }
+	constructor(action: Action, data ? : any)
+	{
+		super(action, ActionType.API, data);
+	}
 }
 
 export class UserActivity extends ServerActivity
 {
-    constructor(action: Action, data?: any)
-    {
-        super(action, ActionType.USER, data);
-    }
+	constructor(action: Action, data ? : any)
+	{
+		super(action, ActionType.USER, data);
+	}
 }
 
 export class SocketActivity extends ServerActivity
 {
-    constructor(action: Action, data?: any)
-    {
-        super(action, ActionType.SOCKET, data, );
-    }
+	constructor(action: Action, data ? : any)
+	{
+		super(action, ActionType.SOCKET, data, );
+	}
 }

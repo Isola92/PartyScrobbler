@@ -1,11 +1,11 @@
-import { ServerCaller } from './ServerCommunicator';
-import { DomWorker } from './DOMWorker';
+import { ServerCaller } from "./ServerCommunicator";
+import { DomWorker } from "./DOMWorker";
 
 /**
  * This class uses DOMWorker utilities to generate HTML.
  * I created this library because I wanted a convenient way to add/remove
  * components on a single HTML-file without a SPA-framework dependencies.
- * It's pretty shitty but it's a good way for me to learn the DOM API.
+ * It"s pretty shitty but it"s a good way for me to learn the DOM API.
  *
  * Todo: Move the element specific info such as type/id/text to JSON-objects.
  */
@@ -21,18 +21,18 @@ import { DomWorker } from './DOMWorker';
 
 export class Components
 {
-    private wrapper: HTMLElement;
-    private domWorker: DomWorker;
+	private wrapper: HTMLElement;
+	private domWorker: DomWorker;
 
-    constructor(domWorker: DomWorker)
-    {
-        this.wrapper = document.getElementById('wrapper');
-        this.domWorker = domWorker;
-    }
+	constructor(domWorker: DomWorker)
+	{
+		this.wrapper = document.getElementById("wrapper");
+		this.domWorker = domWorker;
+	}
 
-    public hostSection(): DocumentFragment
-    {
-        const DOM = `
+	public hostSection(): DocumentFragment
+	{
+		const DOM = `
                 <section id="hostsection">
                     <h2>Host Party</h2>
                     <input type="text" id="hostnamehost" placeholder="Hostname"/>
@@ -40,20 +40,20 @@ export class Components
                 </section>
             `
 
-        const documentFragment: DocumentFragment = this.generateDOMFragment(DOM);
-        
-        documentFragment.querySelector("#hostbutton").addEventListener("click", () =>
-        {
-            const host = (document.getElementById("hostnamehost") as HTMLInputElement).value;
-            ServerCaller.newHost(host);
-        })
+		const documentFragment: DocumentFragment = this.generateDOMFragment(DOM);
 
-        return documentFragment;
-    }
- 
-    public joinSection(): DocumentFragment
-    {
-        const DOM = `
+		documentFragment.querySelector("#hostbutton").addEventListener("click", () =>
+		{
+			const host = (document.getElementById("hostnamehost") as HTMLInputElement).value;
+			ServerCaller.newHost(host);
+		})
+
+		return documentFragment;
+	}
+
+	public joinSection(): DocumentFragment
+	{
+		const DOM = `
                 <section id="joinsection">
                     <h2>Join Party</h2>
                     <input type="text" id="usernamejoin" placeholder="Username" />
@@ -62,26 +62,26 @@ export class Components
                 </section>
             `
 
-        const documentFragment = this.generateDOMFragment(DOM);
-        
-        documentFragment.querySelector("#joinbutton").addEventListener("click", () =>
-        {
-            const username: string = (document.getElementById("usernamejoin") as HTMLInputElement).value;
-            const hostname: string = (document.getElementById("hostnamejoin") as HTMLInputElement).value;
-            window.location.href = '/authenticate?username=' + username + "&host=" + hostname;
-            
-        })
+		const documentFragment = this.generateDOMFragment(DOM);
 
-        return documentFragment;
-   }
+		documentFragment.querySelector("#joinbutton").addEventListener("click", () =>
+		{
+			const username: string = (document.getElementById("usernamejoin") as HTMLInputElement).value;
+			const hostname: string = (document.getElementById("hostnamejoin") as HTMLInputElement).value;
+			window.location.href = "/authenticate?username=" + username + "&host=" + hostname;
 
-    public viewTrackData(track): DocumentFragment
-    {
-        let DOM;
+		})
 
-        if(track)
-        {
-            DOM = `
+		return documentFragment;
+	}
+
+	public viewTrackData(track): DocumentFragment
+	{
+		let DOM;
+
+		if (track)
+		{
+			DOM = `
                 <section id="trackinfo">
                     <h2>Latest Track</h2>
                     <p id="artistname">Artist: ${track.artist}</p>
@@ -90,27 +90,27 @@ export class Components
                     <img id="image" src=${track.image}/>
                 </section>
                 `
-        }
-        else
-        {
-            DOM = `
+		}
+		else
+		{
+			DOM = `
                 <section id="trackinfo">
                 <h2>Waiting for data..</h2>
                 </section>
             `
-        }
+		}
 
-        return this.generateDOMFragment(DOM);
-    };
+		return this.generateDOMFragment(DOM);
+	};
 
-    public viewParty(users): DocumentFragment
-    {
-        const listeners: string = users.reduce( (prev: string, next: string) =>
-        {
-            return prev += `<li>${next}</li>`;
-        })
+	public viewParty(users): DocumentFragment
+	{
+		const listeners: string = users.reduce((prev: string, next: string) =>
+		{
+			return prev += `<li>${next}</li>`;
+		})
 
-        const DOM = `
+		const DOM = `
             <section id="partysection">
                 <h2>Listeners</h2>
                 <ul id="partylist">
@@ -119,36 +119,36 @@ export class Components
             </section>
         `
 
-        return this.generateDOMFragment(DOM);
-    };
+		return this.generateDOMFragment(DOM);
+	};
 
-    public infoSection(): DocumentFragment
-    {
-        const DOM = `
+	public infoSection(): DocumentFragment
+	{
+		const DOM = `
         <section id="infosection">
-            <p>Don't keep all them scrobbles to yourself. Share them with your friends with this tool!</p>
+            <p>Don"t keep all them scrobbles to yourself. Share them with your friends with this tool!</p>
             <p>As a polite host you should create a party to sync your current listening activity with your friends.</p>
         </section>
         `
 
-        return this.generateDOMFragment(DOM);
-    }
+		return this.generateDOMFragment(DOM);
+	}
 
-    public hostView(hostname: string): DocumentFragment
-    {
-        const DOM = `
+	public hostView(hostname: string): DocumentFragment
+	{
+		const DOM = `
             <section id="hostview">
                 <h2>Host</h2>
                 <span id="hostname">${hostname}</span>
             </section>
         `
 
-        return this.generateDOMFragment(DOM);
-    }
+		return this.generateDOMFragment(DOM);
+	}
 
-    private generateDOMFragment(HTMLString: string): DocumentFragment
-    {
-        const range = document.createRange();
-        return range.createContextualFragment(HTMLString);
-    }
+	private generateDOMFragment(HTMLString: string): DocumentFragment
+	{
+		const range = document.createRange();
+		return range.createContextualFragment(HTMLString);
+	}
 }

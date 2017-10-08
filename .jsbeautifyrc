@@ -1,3 +1,8 @@
 {
-    "brace_style": "expand"
+	"brace_style": "expand,preserve-inline",
+	"max_preserve_newlines": 2,
+	"indent_size": 4,
+	"indent_with_tabs": true,
+	"newline_between_rules": true,
+	"selector_separator_newline": false
 }
