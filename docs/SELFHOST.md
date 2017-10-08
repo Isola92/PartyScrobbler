@@ -11,9 +11,9 @@
 2. Start the command prompt where the folder is or navigate to the folder through the command prompt.
 3. When you're in the right location, start the server by typing: node server.js _USERNAME_. _USERNAME_ is the username of the host.  
 4. If everything is fine you should see something like: 
-![screenshot](/readme/serverstart.png)
+![screenshot](serverstart.png)
 5. Find and share your ipv4 address by starting the command prompt and typing _ipconfig_. Should look something like this: 
-![screenshot](/readme/ipconfig.png)
+![screenshot](ipconfig.png)
 
 
 #### Users on the same network can now visit the application:
