@@ -27,5 +27,5 @@ Friends can now join your session by entering their username and the hostname on
 
 3. The server then iterates over the registered users and makes one track.scrobble POST request to the last.fm API for every user.  
 
-[Host the server yourself](SELFHOST.MD)
+[Host the server yourself](SELFHOST.md)
 
