@@ -3,3 +3,4 @@ workspace.xml
 .idea
 /**/*.d.ts
 /**/*.js
+.vscode
