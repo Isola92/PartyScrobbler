@@ -12,6 +12,10 @@ html, body {
 	min-height: 100%;
 }
 
+#randomselector{
+	color: white;
+}
+
 body {
 	font-family: "Verdana";
 	background: #262626;
