@@ -8,9 +8,7 @@
 
 ## How do I start a party?
 
-### Website 
-Just visit https://partyscrobbler.herokuapp.com/, enter your username and you're good to go. 
-Friends can now join your session by entering their username and the hostname on the same site.
+This is no longer needed because Spotify has implemented a party feature that works well.
 
 ## Functionality
 
